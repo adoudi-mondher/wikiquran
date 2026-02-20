@@ -1,0 +1,19 @@
+# ============================================================
+# WikiQuran — requirements.txt
+# Installation : pip install -r requirements.txt
+# ============================================================
+
+# --- Phase 1 : Extraction & Data ---
+lxml==5.1.0             # Parsing XML (Tanzil)
+camel-tools==1.5.4      # Buckwalter → Arabe
+python-dotenv==1.0.1    # Chargement .env
+
+# --- Phase 2 : Base de données ---
+# psycopg2-binary==2.9.9  # PostgreSQL driver
+# sqlalchemy==2.0.29      # ORM PostgreSQL
+# neo4j==5.18.0           # Neo4j driver
+
+# --- Phase 3 : Backend API ---
+# fastapi==0.110.0
+# uvicorn==0.29.0
+# pydantic==2.6.4

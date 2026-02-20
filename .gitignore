@@ -1,0 +1,34 @@
+# ============================================================
+# WikiQuran — .gitignore
+# ============================================================
+
+# Environnement Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+
+# Variables d'environnement — JAMAIS commité
+.env
+
+# Data — fichiers sources trop lourds pour Git
+data/quran_raw/
+data/quran_enriched/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Logs
+*.log
+logs/
+
+# Docker (pour plus tard)
+.docker/
