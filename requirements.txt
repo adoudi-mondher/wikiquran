@@ -4,9 +4,10 @@
 # ============================================================
 
 # --- Phase 1 : Extraction & Data ---
-lxml==5.1.0             # Parsing XML (Tanzil)
-camel-tools==1.5.4      # Buckwalter → Arabe
+lxml>=5.2.0             # Parsing XML (Tanzil) — version compatible Python 3.14
 python-dotenv==1.0.1    # Chargement .env
+# Note : camel-tools non compatible Python 3.14
+# La conversion Buckwalter → Arabe est faite dans scripts/utils/buckwalter.py
 
 # --- Phase 2 : Base de données ---
 # psycopg2-binary==2.9.9  # PostgreSQL driver
