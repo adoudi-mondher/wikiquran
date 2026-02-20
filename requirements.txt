@@ -4,17 +4,17 @@
 # ============================================================
 
 # --- Phase 1 : Extraction & Data ---
-lxml>=5.2.0             # Parsing XML (Tanzil) — version compatible Python 3.14
+lxml>=5.2.0             # Parsing XML (Tanzil)
 python-dotenv==1.0.1    # Chargement .env
 # Note : camel-tools non compatible Python 3.14
 # La conversion Buckwalter → Arabe est faite dans scripts/utils/buckwalter.py
 
 # --- Phase 2 : Base de données ---
-# psycopg2-binary==2.9.9  # PostgreSQL driver
-# sqlalchemy==2.0.29      # ORM PostgreSQL
-# neo4j==5.18.0           # Neo4j driver
+psycopg2-binary>=2.9.9  # PostgreSQL driver
+neo4j>=5.26.0           # Neo4j driver (compatible 5.26 LTS)
 
 # --- Phase 3 : Backend API ---
 # fastapi==0.110.0
 # uvicorn==0.29.0
 # pydantic==2.6.4
+# sqlalchemy==2.0.29
