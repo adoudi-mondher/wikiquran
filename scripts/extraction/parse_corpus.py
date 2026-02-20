@@ -112,10 +112,12 @@ def parse_morphology() -> tuple[list, list, list]:
     words_dict = {}   # text_arabic → word dict
     roots_dict = {}   # root_bw     → root dict
 
-    occurrences   = []
-    lines_parsed  = 0
-    stems_found   = 0
-    skipped       = 0
+    occurrences      = []
+    seen_occurrences = set()  # dédupliquer par (surah, ayah, position)
+    lines_parsed     = 0
+    stems_found      = 0
+    skipped          = 0
+    dupes_ignored    = 0
 
     with open(FILE_MORPHO, encoding='utf-8') as f:
         for line in f:
@@ -175,18 +177,22 @@ def parse_morphology() -> tuple[list, list, list]:
                     "pos"             : feat['pos'],
                 }
 
-            # --- Occurrence ---
-            occurrences.append({
-                "surah_number" : surah,
-                "ayah_number"  : ayah_num,
-                "word_position": word_pos,
-                "form_bw"      : form,
-                "root_bw"      : root_bw,
-            })
-
-            # Comptage occurrences par racine
-            if root_bw:
-                roots_dict[root_bw]['occurrences_count'] += 1
+            # --- Occurrence — dédupliquée par (surah, ayah, position) ---
+            occurrence_key = (surah, ayah_num, word_pos)
+            if occurrence_key not in seen_occurrences:
+                seen_occurrences.add(occurrence_key)
+                occurrences.append({
+                    "surah_number" : surah,
+                    "ayah_number"  : ayah_num,
+                    "word_position": word_pos,
+                    "form_bw"      : form,
+                    "root_bw"      : root_bw,
+                })
+                # Comptage occurrences par racine
+                if root_bw:
+                    roots_dict[root_bw]['occurrences_count'] += 1
+            else:
+                dupes_ignored += 1
 
     # Conversion en listes
     words = list(words_dict.values())
@@ -196,7 +202,8 @@ def parse_morphology() -> tuple[list, list, list]:
     print(f"  ✅ Segments STEM gardés : {stems_found:>7}")
     print(f"  ✅ Mots uniques         : {len(words):>7}")
     print(f"  ✅ Racines uniques      : {len(roots):>7}")
-    print(f"  ✅ Occurrences          : {len(occurrences):>7}")
+    print(f"  ✅ Occurrences uniques  : {len(occurrences):>7}")
+    print(f"  ⚠️  Doublons ignorés     : {dupes_ignored:>7}")
     print(f"  ⚠️  Lignes ignorées      : {skipped:>7}")
 
     return words, occurrences, roots

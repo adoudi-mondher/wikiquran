@@ -16,6 +16,8 @@ CREATE TABLE surah (
     id                  SERIAL          PRIMARY KEY,
     number              SMALLINT        NOT NULL UNIQUE,          -- Numéro ordre Mushaf (1-114)
     name_arabic         VARCHAR(50)     NOT NULL,                 -- Nom en arabe ex: الفاتحة
+    name_en               VARCHAR(100),                           -- Nom en anglais ex: The Opening
+    name_transliteration  VARCHAR(100),                           -- Translittération ex: Al-Faatiha
     revelation_order    SMALLINT        NOT NULL,                 -- Ordre chronologique de révélation
     type                VARCHAR(10)     NOT NULL                  -- 'meccan' ou 'medinan'
                         CHECK (type IN ('meccan', 'medinan')),
@@ -23,6 +25,7 @@ CREATE TABLE surah (
     juz_start           SMALLINT,                                 -- Numéro du Juz de début
     hizb_start          SMALLINT,                                 -- Numéro du Hizb de début
     page_start          SMALLINT,                                 -- Page Mushaf de Médine
+    rukus                 SMALLINT,                               -- Nombre de sections de récitation
 
     created_at          TIMESTAMP       DEFAULT NOW()
 );
