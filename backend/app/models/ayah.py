@@ -16,4 +16,6 @@ class Ayah(Base):
     created_at  = Column(DateTime,     server_default=func.now())
 
     # Relation vers le modèle Surah — JOIN automatique en une seule requête
-    surah = relationship("Surah", back_populates="ayahs", lazy="joined")    
+    surah = relationship("Surah", back_populates="ayahs", lazy="joined")
+
+    occurrences = relationship("WordOccurrence", lazy="select")  

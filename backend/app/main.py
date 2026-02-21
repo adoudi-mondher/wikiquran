@@ -5,8 +5,12 @@ from app.config import settings
 from app.database import close_neo4j
 from app.api import surahs
 from app.api import ayahs
+from app.api import roots
 from app.models import surah  # noqa
 from app.models import ayah   # noqa
+from app.models import root          # noqa
+from app.models import word          # noqa
+from app.models import word_occurrence  # noqa
 
 
 @asynccontextmanager
@@ -38,6 +42,7 @@ app.add_middleware(
 # ─── Routers ───────────────────────────────────────────────
 app.include_router(surahs.router)
 app.include_router(ayahs.router)
+app.include_router(roots.router)
 
 # ─── Healthcheck ───────────────────────────────────────────
 @app.get("/", tags=["Health"])
