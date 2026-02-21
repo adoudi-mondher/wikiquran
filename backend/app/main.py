@@ -7,6 +7,7 @@ from app.api import surahs
 from app.api import ayahs
 from app.api import roots
 from app.api import search
+from app.api import network
 from app.models import surah  # noqa
 from app.models import ayah   # noqa
 from app.models import root          # noqa
@@ -45,6 +46,7 @@ app.include_router(surahs.router)
 app.include_router(ayahs.router)
 app.include_router(roots.router)
 app.include_router(search.router)
+app.include_router(network.router)
 
 # ─── Healthcheck ───────────────────────────────────────────
 @app.get("/", tags=["Health"])
