@@ -156,9 +156,7 @@ LIMIT 20;
 | Environnement | Outils |
 |--------------|--------|
 | **Dev** | Docker Compose |
-| **Prod Backend** | Render |
-| **Prod Frontend** | Vercel |
-| **Prod Neo4j** | Neo4j AuraDB Free |
+| **Prod** | VPS OVH (nginx + docker-compose) |
 
 ---
 
@@ -196,10 +194,13 @@ LIMIT 20;
 - [ ] Support RTL natif
 
 ### Phase 5 — Déploiement ⏳ `À VENIR`
-- [ ] CI/CD GitHub Actions
-- [ ] Backend → Render
-- [ ] Frontend → Vercel
-- [ ] Neo4j → AuraDB
+- [ ] Configuration VPS OVH (Ubuntu + Docker)
+- [ ] `docker-compose.prod.yml` (PostgreSQL + Neo4j + Backend + Nginx)
+- [ ] Configuration Nginx (reverse proxy)
+- [ ] Certificat SSL (Let's Encrypt)
+- [ ] CI/CD GitHub Actions → déploiement automatique
+- [ ] Frontend → Vercel ou VPS
+- [ ] Monitoring basique (logs + healthchecks)
 
 ---
 
@@ -216,7 +217,8 @@ wikiquran/
 │       ├── models/        # SQLAlchemy
 │       ├── schemas/       # Pydantic
 │       ├── api/           # Routes
-│       └── services/      # Logique métier
+│       ├── services/      # Logique métier
+│       └── utils/         # Helpers (buckwalter, etc.)
 │
 ├── frontend/
 │   └── src/
