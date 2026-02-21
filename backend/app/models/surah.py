@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, SmallInteger, String, Text, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -21,3 +22,6 @@ class Surah(Base):
     page_start           = Column(SmallInteger)
     rukus                = Column(SmallInteger)
     created_at           = Column(DateTime, server_default=func.now())
+
+    # Relation vers les versets de cette sourate
+    ayahs = relationship("Ayah", back_populates="surah", lazy="joined")
