@@ -51,3 +51,35 @@ class NetworkResponse(BaseModel):
     nodes:  list[GraphNode]
     links:  list[GraphLink]
     meta:   NetworkMeta
+
+
+# ─────────────────────────────────────────────
+# RÉPONSE COMPLÈTE — Endpoint /network/root
+# ─────────────────────────────────────────────
+
+class RootInfo(BaseModel):
+    """Infos de la racine recherchée."""
+
+    buckwalter:        str
+    arabic:            str
+    occurrences_count: int
+    total_ayahs:       int     # Nombre total de versets (avant max_nodes)
+
+
+class RootNetworkMeta(BaseModel):
+    """Métadonnées spécifiques à /network/root."""
+
+    max_nodes:   int           # Plafond de nœuds demandé
+    min_roots:   int           # Seuil appliqué
+    limit:       int           # Limite de liens appliquée
+    total_nodes: int           # Nœuds effectivement retournés
+    total_links: int           # Liens effectivement retournés
+
+
+class RootNetworkResponse(BaseModel):
+    """Réponse complète pour GET /network/root/{buckwalter}."""
+
+    root:  RootInfo
+    nodes: list[GraphNode]
+    links: list[GraphLink]
+    meta:  RootNetworkMeta

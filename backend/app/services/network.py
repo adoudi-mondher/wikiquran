@@ -5,6 +5,9 @@ from app.schemas.network import (
     GraphNode,
     GraphLink,
     NetworkMeta,
+    RootNetworkResponse,
+    RootInfo,
+    RootNetworkMeta,
 )
 
 
@@ -34,6 +37,41 @@ _CYPHER_AYAH_NETWORK = """
 _CYPHER_AYAH_EXISTS = """
     MATCH (a:Ayah {surah_number: $surah, ayah_number: $verse})
     RETURN a.surah_number AS surah_number, a.ayah_number AS ayah_number
+"""
+
+# Infos racine + ses versets (limités à max_nodes, ordre Mushaf)
+_CYPHER_ROOT_AYAHS = """
+    MATCH (r:Root {buckwalter: $bw})<-[:DERIVED_FROM]-(:Word)<-[:CONTAINS]-(a:Ayah)
+    WITH r, collect(DISTINCT a) AS all_ayahs
+    WITH r, all_ayahs, size(all_ayahs) AS total_ayahs
+    UNWIND all_ayahs AS a
+    WITH r, total_ayahs, a
+    ORDER BY a.surah_number, a.ayah_number
+    LIMIT $max_nodes
+    RETURN r.buckwalter AS root_bw,
+           r.arabic AS root_ar,
+           r.occurrences_count AS occurrences_count,
+           total_ayahs,
+           collect(a) AS ayahs
+"""
+
+# Liens SHARES_ROOT entre un ensemble de versets (par pg_id)
+_CYPHER_ROOT_LINKS = """
+    UNWIND $pg_ids AS id1
+    UNWIND $pg_ids AS id2
+    WITH id1, id2
+    WHERE id1 < id2
+    MATCH (a1:Ayah {pg_id: id1})-[r:SHARES_ROOT]-(a2:Ayah {pg_id: id2})
+    WITH a1, a2,
+         count(r) AS weight,
+         collect(r.root_bw) AS roots_bw,
+         collect(r.root_arabic) AS roots_ar
+    WHERE weight >= $min_roots
+    ORDER BY weight DESC
+    LIMIT $limit
+    RETURN a1.surah_number AS src_surah, a1.ayah_number AS src_ayah,
+           a2.surah_number AS tgt_surah, a2.ayah_number AS tgt_ayah,
+           weight, roots_bw, roots_ar
 """
 
 
@@ -175,6 +213,112 @@ def get_ayah_network(
         meta=NetworkMeta(
             min_roots=min_roots,
             limit=limit,
+            total_links=len(links),
+        ),
+    )
+
+
+# ─────────────────────────────────────────────
+# SOUS-GRAPHE D'UNE RACINE
+# ─────────────────────────────────────────────
+
+def get_root_network(
+    session: Neo4jSession,
+    buckwalter: str,
+    max_nodes: int,
+    min_roots: int,
+    limit: int,
+) -> RootNetworkResponse | None:
+    """
+    Récupère le sous-graphe des versets contenant une racine,
+    avec leurs connexions SHARES_ROOT mutuelles.
+    Retourne None si la racine n'existe pas dans Neo4j.
+    """
+
+    # 1. Récupérer la racine + ses versets (limités à max_nodes)
+    result = session.run(
+        _CYPHER_ROOT_AYAHS,
+        bw=buckwalter,
+        max_nodes=max_nodes,
+    ).single()
+
+    if not result:
+        return None  # Racine inexistante → la route renverra 404
+
+    # 2. Extraire les infos de la racine
+    root_info = RootInfo(
+        buckwalter=result["root_bw"],
+        arabic=result["root_ar"],
+        occurrences_count=result["occurrences_count"],
+        total_ayahs=result["total_ayahs"],
+    )
+
+    # 3. Construire les nœuds depuis les versets récupérés
+    ayah_nodes = result["ayahs"]
+    nodes = []
+    pg_ids = []
+    for a in ayah_nodes:
+        s = a["surah_number"]
+        v = a["ayah_number"]
+        nodes.append(GraphNode(
+            id=_make_node_id(s, v),
+            surah_number=s,
+            ayah_number=v,
+            group=s,
+        ))
+        pg_ids.append(a["pg_id"])
+
+    # 4. Si 0 ou 1 verset, pas de liens possibles
+    if len(pg_ids) < 2:
+        return RootNetworkResponse(
+            root=root_info,
+            nodes=nodes,
+            links=[],
+            meta=RootNetworkMeta(
+                max_nodes=max_nodes,
+                min_roots=min_roots,
+                limit=limit,
+                total_nodes=len(nodes),
+                total_links=0,
+            ),
+        )
+
+    # 5. Chercher les liens SHARES_ROOT entre ces versets
+    link_records = list(session.run(
+        _CYPHER_ROOT_LINKS,
+        pg_ids=pg_ids,
+        min_roots=min_roots,
+        limit=limit,
+    ))
+
+    # 6. Construire les liens
+    links = []
+    for record in link_records:
+        src_id = _make_node_id(record["src_surah"], record["src_ayah"])
+        tgt_id = _make_node_id(record["tgt_surah"], record["tgt_ayah"])
+
+        clean_bw, clean_ar = _deduplicate_roots(
+            record["roots_bw"],
+            record["roots_ar"],
+        )
+        links.append(GraphLink(
+            source=src_id,
+            target=tgt_id,
+            weight=len(clean_bw),
+            roots_bw=clean_bw,
+            roots_ar=clean_ar,
+        ))
+
+    # 7. Assembler la réponse
+    return RootNetworkResponse(
+        root=root_info,
+        nodes=nodes,
+        links=links,
+        meta=RootNetworkMeta(
+            max_nodes=max_nodes,
+            min_roots=min_roots,
+            limit=limit,
+            total_nodes=len(nodes),
             total_links=len(links),
         ),
     )
