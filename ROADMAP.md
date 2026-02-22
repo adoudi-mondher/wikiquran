@@ -54,33 +54,46 @@
 
 ---
 
-## 🔄 Phase 3 — Backend API `EN COURS`
+## ✅ Phase 3 — Backend API `TERMINÉE`
 
-### Setup ⏳
-- [ ] Structure `backend/app/` (FastAPI + SQLAlchemy + Pydantic)
-- [ ] Connexion PostgreSQL (config + session SQLAlchemy)
-- [ ] Connexion Neo4j (driver Bolt)
-- [ ] `main.py` — point d'entrée FastAPI
-- [ ] `config.py` — settings via `.env`
+### Setup ✅
+- [x] Structure `backend/app/` (FastAPI + SQLAlchemy + Pydantic)
+- [x] Connexion PostgreSQL (config + session SQLAlchemy)
+- [x] Connexion Neo4j (driver Bolt)
+- [x] `main.py` — point d'entrée FastAPI
+- [x] `config.py` — settings via `.env` (pydantic-settings)
 
-### Endpoints PostgreSQL ⏳
-- [ ] `GET /surahs` — liste des 114 sourates
-- [ ] `GET /surah/{number}` — détail sourate + ses versets
-- [ ] `GET /ayah/{surah}/{verse}` — détail verset
-- [ ] `GET /search?q=...` — recherche full-text arabe
-- [ ] `GET /root/{buckwalter}` — détail racine + versets associés
+### Endpoints PostgreSQL ✅
+- [x] `GET /surahs` — liste des 114 sourates
+- [x] `GET /surah/{number}` — détail sourate + ses versets
+- [x] `GET /ayah/{surah}/{verse}` — détail verset
+- [x] `GET /search?q=...` — recherche full-text arabe (normalisation diacritiques Uthmani)
+- [x] `GET /root/{buckwalter}` — détail racine + versets associés (pagination)
 
-### Endpoints Neo4j ⏳
-- [ ] `GET /network/ayah/{id}` — sous-graphe `SHARES_ROOT` d'un verset
-- [ ] `GET /network/root/{buckwalter}` — tous les versets d'une racine
-- [ ] `GET /analytics/top-roots` — racines les plus fréquentes
-- [ ] `GET /analytics/meccan-vs-medinan` — comparaison analytique
+### Endpoints Neo4j ✅
+- [x] `GET /network/ayah/{surah}/{verse}` — sous-graphe `SHARES_ROOT` d'un verset
+  - [x] Leviers A (min_roots) + B (limit), profondeur 1
+  - [x] Format react-force-graph : `{nodes, links, center, meta}`
+- [x] `GET /network/root/{buckwalter}` — sous-graphe des versets d'une racine
+  - [x] v1 : tri Mushaf (ordre Coran)
+  - [x] v2 : tri connectivité (versets les plus connectés entre eux)
+  - [x] Paramètre `?sort=mushaf|connected`
+- [x] `GET /analytics/top-roots` — racines classées par nombre de versets distincts
+- [x] `GET /analytics/meccan-vs-medinan` — comparaison vocabulaire par période de révélation
 
-### Qualité ⏳
-- [ ] Schemas Pydantic pour chaque endpoint
-- [ ] Gestion des erreurs (404, 422, 500)
-- [ ] Documentation Swagger auto-générée (`/docs`)
-- [ ] Tests endpoints basiques
+### Qualité ✅
+- [x] Schemas Pydantic pour chaque endpoint
+- [x] Gestion des erreurs (404, 422) — validation déclarative via FastAPI Query
+- [x] Documentation Swagger auto-générée (`/docs`)
+- [x] Tests manuels edge cases (6/6 passés)
+- [x] Fix SAWarning back_populates Ayah ↔ WordOccurrence
+
+### Notes Phase 3
+- Architecture SOLID : routes (HTTP) / services (logique) / schemas (contrats)
+- Approche B pour les défauts : valeurs par défaut uniquement dans les routes
+- Design A pour SHARES_ROOT : une relation par racine partagée (granularité maximale)
+- Performance `sort=connected` : ~4.6s pour racines fréquentes (optimisation prévue Phase 5)
+- 9 endpoints au total : 5 PostgreSQL + 4 Neo4j
 
 ---
 
@@ -141,6 +154,11 @@
 | Déploiement | VPS OVH (nginx + docker-compose) |
 | Versioning deps | `venv` + `pip` + `requirements.txt` |
 | Interpréteur VSCode | `.venv\Scripts\python.exe` (Pylance) |
+| SHARES_ROOT Design | Design A — une relation par racine (granularité maximale) |
+| Défauts Query params | Approche B — défauts uniquement dans les routes |
+| Format graphe API | react-force-graph : `{nodes, links}` avec `group` = surah_number |
+| Performance SHARES_ROOT | Leviers A (min_roots) + B (limit), profondeur 1 |
+| Architecture backend | SOLID : routes / services / schemas (3 couches) |
 
 ---
 
@@ -161,5 +179,5 @@
 ---
 
 **Dernière mise à jour :** Février 2026
-**Statut :** ✅ Phase 1 & 2 terminées — 🔄 Phase 3 Backend FastAPI en cours
-**Version :** 0.3.0
+**Statut :** ✅ Phase 1, 2 & 3 terminées — ⏳ Phase 4 Frontend à venir
+**Version :** 0.4.0
