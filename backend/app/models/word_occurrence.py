@@ -21,4 +21,4 @@ class WordOccurrence(Base):
     word = relationship("Word", back_populates="occurrences", lazy="joined")
 
     # Relation vers le verset — lazy="joined" pour récupérer le texte arabe directement
-    ayah = relationship("Ayah", lazy="joined")
+    ayah = relationship("Ayah", back_populates="occurrences", lazy="joined")
