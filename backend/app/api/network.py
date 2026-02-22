@@ -37,6 +37,7 @@ def get_ayah_network(
 @router.get("/root/{buckwalter}", response_model=RootNetworkResponse)
 def get_root_network(
     buckwalter: str,
+    sort: str = Query(default="mushaf", pattern="^(mushaf|connected)$", description="Tri : mushaf (ordre Coran) ou connected (plus connectés)"),
     max_nodes: int = Query(default=30, ge=5, le=100, description="Nombre max de versets affichés"),
     min_roots: int = Query(default=2, ge=1, le=10, description="Seuil minimum de racines partagées"),
     limit: int = Query(default=100, ge=1, le=500, description="Nombre max de liens retournés"),
@@ -46,10 +47,10 @@ def get_root_network(
     Retourne le sous-graphe des versets contenant une racine,
     avec leurs connexions SHARES_ROOT mutuelles.
     Format compatible react-force-graph : {nodes, links}.
-    Exemple : GET /network/root/Elm?max_nodes=30&min_roots=2&limit=100
+    Exemple : GET /network/root/Elm?sort=connected&max_nodes=30&min_roots=2
     """
     result = network_service.get_root_network(
-        session, buckwalter, max_nodes, min_roots, limit,
+        session, buckwalter, max_nodes, min_roots, limit, sort,
     )
 
     if result is None:

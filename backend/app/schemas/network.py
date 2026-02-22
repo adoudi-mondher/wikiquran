@@ -69,6 +69,7 @@ class RootInfo(BaseModel):
 class RootNetworkMeta(BaseModel):
     """Métadonnées spécifiques à /network/root."""
 
+    sort:        str           # Tri appliqué : "mushaf" ou "connected"
     max_nodes:   int           # Plafond de nœuds demandé
     min_roots:   int           # Seuil appliqué
     limit:       int           # Limite de liens appliquée
