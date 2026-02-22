@@ -32,3 +32,9 @@ logs/
 
 # Docker (pour plus tard)
 .docker/
+
+# frontend/.gitignore
+node_modules/
+dist/
+.vite/
+*.local

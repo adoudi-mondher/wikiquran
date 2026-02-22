@@ -1,0 +1,17 @@
+/* Tailwind v4 — un seul import, zéro config JS */
+@import "tailwindcss";
+
+/* Thème personnalisé — remplace tailwind.config.ts */
+@theme {
+  /* Polices — priorité à une bonne lisibilité Uthmani */
+  --font-arabic: "Amiri", "Noto Naskh Arabic", serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+/* Style global pour le texte arabe Uthmani */
+.text-uthmani {
+  font-family: var(--font-arabic);
+  direction: rtl;
+  text-align: right;
+  line-height: 2;
+}

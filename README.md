@@ -194,7 +194,7 @@ LIMIT 20;
 - [ ] Support RTL natif
 
 ### Phase 5 — Déploiement ⏳ `À VENIR`
-- [ ] Configuration VPS OVH (Ubuntu + Docker)
+- [ ] Configuration VPS OVH (Debian + Docker)
 - [ ] `docker-compose.prod.yml` (PostgreSQL + Neo4j + Backend + Nginx)
 - [ ] Configuration Nginx (reverse proxy)
 - [ ] Certificat SSL (Let's Encrypt)
