@@ -6,7 +6,7 @@ import { useRef, useCallback, useMemo } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useContainerSize } from '../../hooks/useContainerSize'
 import { surahColor } from '../../lib/constants'
-import type { GraphResponse, GraphNode, GraphLink } from '../../types/api'
+import type { GraphResponse, GraphNode, GraphLink, Surah } from '../../types/api'
 
 // --- Types internes ForceGraph2D ---
 // ForceGraph2D mute les objets en ajoutant x, y, vx, vy à runtime
@@ -23,6 +23,7 @@ interface FGLink extends GraphLink {
 // --- Props du composant ---
 interface SharesRootGraphProps {
   data: GraphResponse
+  surahMap: Map<number, Surah>
   onNodeClick?: (nodeId: string) => void
 }
 
@@ -30,18 +31,18 @@ interface SharesRootGraphProps {
 const NODE_RADIUS = 5           // Rayon de base des nœuds
 const CENTER_RADIUS = 10        // Rayon du nœud central (x2)
 const CENTER_BORDER = 2         // Épaisseur bordure nœud central
-const LABEL_FONT_SIZE = 3       // Taille police labels (relative au zoom)
+const FONT_SIZE_BASE = 3        // Taille police dans les nœuds normaux
+const FONT_SIZE_CENTER = 4.5    // Taille police dans le nœud central
 const LINK_BASE_WIDTH = 0.5     // Épaisseur de base des liens
 const LINK_WEIGHT_SCALE = 0.8   // Multiplicateur poids → épaisseur
 
-export default function SharesRootGraph({ data, onNodeClick }: SharesRootGraphProps) {
+export default function SharesRootGraph({ data, surahMap, onNodeClick }: SharesRootGraphProps) {
   // --- Dimensions responsives ---
   const containerRef = useRef<HTMLDivElement>(null)
   const { width, height } = useContainerSize(containerRef)
 
   // --- Données pour ForceGraph2D ---
   // useMemo évite de recréer l'objet à chaque render
-  // ForceGraph2D détecte le changement de référence pour relancer la simulation
   const graphData = useMemo(() => ({
     nodes: data.nodes,
     links: data.links,
@@ -71,19 +72,19 @@ export default function SharesRootGraph({ data, onNodeClick }: SharesRootGraphPr
       ctx.stroke()
     }
 
-    // Label "surah:ayah" — visible seulement si assez zoomé
-    const fontSize = LABEL_FONT_SIZE + (isCenter ? 2 : 0)
-    if (globalScale > 1.5 || isCenter) {
-      ctx.font = `${fontSize}px Inter, sans-serif`
+    // Label centré dans le nœud — visible si assez zoomé ou nœud central
+    const fontSize = isCenter ? FONT_SIZE_CENTER : FONT_SIZE_BASE
+    if (globalScale > 1.2 || isCenter) {
+      const label = node.id
+      ctx.font = `bold ${fontSize}px Inter, sans-serif`
       ctx.textAlign = 'center'
-      ctx.textBaseline = 'top'
-      ctx.fillStyle = '#e5e7eb'  // gray-200
-      ctx.fillText(node.id, node.x, node.y + radius + 2)
+      ctx.textBaseline = 'middle'  // Centré verticalement dans le cercle
+      ctx.fillStyle = '#ffffff'
+      ctx.fillText(label, node.x, node.y)
     }
   }, [centerId])
 
   // --- Zone de détection du pointeur pour chaque nœud ---
-  // Nécessaire quand on utilise nodeCanvasObject (mode custom)
   const drawNodePointerArea = useCallback((node: FGNode, color: string, ctx: CanvasRenderingContext2D) => {
     if (node.x === undefined || node.y === undefined) return
 
@@ -92,9 +93,16 @@ export default function SharesRootGraph({ data, onNodeClick }: SharesRootGraphPr
 
     ctx.beginPath()
     ctx.arc(node.x, node.y, radius + 2, 0, 2 * Math.PI)
-    ctx.fillStyle = color  // Couleur unique attribuée par ForceGraph2D pour le hit-test
+    ctx.fillStyle = color
     ctx.fill()
   }, [centerId])
+
+  // --- Tooltip enrichi au survol des nœuds ---
+  const nodeTooltip = useCallback((node: FGNode): string => {
+    const surah = surahMap.get(node.surah_number)
+    const surahName = surah?.name_arabic ?? `Sourate ${node.surah_number}`
+    return `سورة ${surahName} — الآية ${node.ayah_number}`
+  }, [surahMap])
 
   // --- Tooltip au survol des liens ---
   const linkTooltip = useCallback((link: FGLink): string => {
@@ -119,11 +127,6 @@ export default function SharesRootGraph({ data, onNodeClick }: SharesRootGraphPr
       onNodeClick(node.id as string)
     }
   }, [onNodeClick])
-
-  // --- Tooltip au survol des nœuds ---
-  const nodeTooltip = useCallback((node: FGNode): string => {
-    return `Sourate ${node.surah_number} : Verset ${node.ayah_number}`
-  }, [])
 
   return (
     <div ref={containerRef} className="w-full h-full">

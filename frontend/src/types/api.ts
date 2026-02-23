@@ -37,14 +37,26 @@ export interface GraphResponse {
 
 // --- Texte (endpoints PostgreSQL) ---
 
-/** Sourate */
+/** Sourate — miroir exact du schema Pydantic backend */
 export interface Surah {
+  id: number
   number: number
   name_arabic: string
-  name_english: string
-  type: 'meccan' | 'medinan'
+  name_en: string
+  name_transliteration: string
   revelation_order: number
-  ayah_count: number
+  type: 'meccan' | 'medinan'
+  ayas_count: number
+  juz_start: number | null
+  hizb_start: number | null
+  page_start: number | null
+  rukus: number
+}
+
+/** Réponse de GET /surahs — objet enveloppant */
+export interface SurahListResponse {
+  total: number
+  surahs: Surah[]
 }
 
 /** Verset */
