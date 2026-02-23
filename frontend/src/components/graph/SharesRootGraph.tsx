@@ -5,6 +5,7 @@
 import { useRef, useCallback, useMemo } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useContainerSize } from '../../hooks/useContainerSize'
+import { t } from '../../lib/i18n'
 import { surahColor } from '../../lib/constants'
 import type { GraphResponse, GraphNode, GraphLink, Surah } from '../../types/api'
 
@@ -100,7 +101,7 @@ export default function SharesRootGraph({ data, surahMap, onNodeClick }: SharesR
   // --- Tooltip enrichi au survol des nœuds ---
   const nodeTooltip = useCallback((node: FGNode): string => {
     const surah = surahMap.get(node.surah_number)
-    const surahName = surah?.name_arabic ?? `Sourate ${node.surah_number}`
+    const surahName = surah?.name_arabic ?? `${t('graph.surahFallback')} ${node.surah_number}`
     return `سورة ${surahName} — الآية ${node.ayah_number}`
   }, [surahMap])
 
@@ -108,7 +109,7 @@ export default function SharesRootGraph({ data, surahMap, onNodeClick }: SharesR
   const linkTooltip = useCallback((link: FGLink): string => {
     const roots = (link as GraphLink).roots_ar
     const weight = (link as GraphLink).weight
-    return `${roots.join('، ')} (${weight} racine${weight > 1 ? 's' : ''})`
+    return `${roots.join('، ')} (${weight} ${t('graph.rootCount')})`
   }, [])
 
   // --- Épaisseur des liens proportionnelle au poids ---

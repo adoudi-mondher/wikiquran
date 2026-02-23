@@ -6,6 +6,7 @@ import SharesRootGraph from '../components/graph/SharesRootGraph'
 import { useAyahNetwork } from '../hooks/useNetwork'
 import { useSurahs } from '../hooks/useSurahs'
 import { GRAPH_DEFAULTS, GRAPH_LIMITS } from '../lib/constants'
+import { t, isRTL } from '../lib/i18n'
 
 /** Paramètres validés prêts pour l'API */
 interface SearchParams {
@@ -19,6 +20,9 @@ interface SearchParams {
 const LIMIT_MAX = 100
 
 export default function GraphPage() {
+  // --- Direction d'écriture (RTL pour l'arabe) ---
+  const dir = isRTL() ? 'rtl' : 'ltr'
+
   // --- Données de référence (chargées une seule fois) ---
   const { surahs, surahMap, isLoading: surahsLoading } = useSurahs()
 
@@ -86,11 +90,11 @@ export default function GraphPage() {
   const isLoading = graphLoading
 
   return (
-    <div className="h-screen flex flex-col bg-gray-950">
+    <div dir={dir} className="h-screen flex flex-col bg-gray-950">
       {/* --- Header --- */}
       <header className="px-6 py-4 border-b border-gray-800 shrink-0">
         <h1 className="text-xl font-semibold text-gray-100">
-          🕌 WikiQuran — Knowledge Graph
+          {t('app.title')}
         </h1>
       </header>
 
@@ -101,7 +105,7 @@ export default function GraphPage() {
           {/* Select sourate */}
           <div className="flex flex-col gap-1">
             <label htmlFor="surah-select" className="text-xs text-gray-400">
-              Sourate
+              {t('controls.surah')}
             </label>
             <select
               id="surah-select"
@@ -114,7 +118,7 @@ export default function GraphPage() {
             >
               {surahs.map((s) => (
                 <option key={s.number} value={s.number}>
-                  {s.number}. {s.name_arabic} — {s.name_en}
+                  {s.number}. {s.name_arabic}
                 </option>
               ))}
             </select>
@@ -123,7 +127,7 @@ export default function GraphPage() {
           {/* Select ayah */}
           <div className="flex flex-col gap-1">
             <label htmlFor="ayah-select" className="text-xs text-gray-400">
-              Verset
+              {t('controls.ayah')}
             </label>
             <select
               id="ayah-select"
@@ -143,7 +147,7 @@ export default function GraphPage() {
           {/* Slider min_roots */}
           <div className="flex flex-col gap-1">
             <label htmlFor="min-roots" className="text-xs text-gray-400">
-              Racines min : {minRoots}
+              {t('controls.minRoots')} : {minRoots}
             </label>
             <input
               id="min-roots"
@@ -159,7 +163,7 @@ export default function GraphPage() {
           {/* Slider limit */}
           <div className="flex flex-col gap-1">
             <label htmlFor="limit" className="text-xs text-gray-400">
-              Voisins max : {limit}
+              {t('controls.maxNeighbors')} : {limit}
             </label>
             <input
               id="limit"
@@ -180,15 +184,15 @@ export default function GraphPage() {
                        hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed
                        transition-colors"
           >
-            {isLoading ? 'Chargement…' : 'Explorer'}
+            {isLoading ? t('common.loading') : t('controls.explore')}
           </button>
 
           {/* Métadonnées du résultat */}
           {data && (
             <span className="text-xs text-gray-500 self-center">
-              {data.nodes.length} nœuds · {data.links.length} liens
+              {data.nodes.length} {t('graph.nodes')} · {data.links.length} {t('graph.links')}
               {data.meta.total_links > data.links.length && (
-                <> · {data.meta.total_links} total (filtré)</>
+                <> · {data.meta.total_links} {t('graph.totalFiltered')}</>
               )}
             </span>
           )}
@@ -201,9 +205,9 @@ export default function GraphPage() {
         {!searchParams && !isLoading && (
           <div className="absolute inset-0 flex items-center justify-center text-gray-600">
             <div className="text-center">
-              <p className="text-lg mb-2">Entrez un verset pour explorer ses connexions</p>
+              <p className="text-lg mb-2">{t('graph.idle')}</p>
               <p className="text-sm">
-                Exemple : <span className="text-gray-400">Al-Baqarah, verset 255</span> (Ayat al-Kursi)
+                <span className="text-gray-400">{t('graph.idleExample')}</span>
               </p>
             </div>
           </div>
@@ -214,7 +218,7 @@ export default function GraphPage() {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-sm text-gray-400">Exploration du graphe…</p>
+              <p className="text-sm text-gray-400">{t('graph.exploring')}</p>
             </div>
           </div>
         )}
@@ -223,9 +227,9 @@ export default function GraphPage() {
         {apiError && !isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center max-w-md px-6">
-              <p className="text-red-400 mb-2">Erreur</p>
+              <p className="text-red-400 mb-2">{t('common.error')}</p>
               <p className="text-sm text-gray-400">
-                {apiError instanceof Error ? apiError.message : 'Erreur inconnue'}
+                {apiError instanceof Error ? apiError.message : t('common.unknownError')}
               </p>
             </div>
           </div>
