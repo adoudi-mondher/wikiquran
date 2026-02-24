@@ -59,11 +59,13 @@ export interface SurahListResponse {
   surahs: Surah[]
 }
 
-/** Verset */
-export interface Ayah {
+/** Verset — réponse de GET /ayah/{surah}/{verse} */
+export interface AyahDetail {
+  id: number
   surah_number: number
-  ayah_number: number
-  text_uthmani: string
+  surah_name_arabic: string
+  number: number
+  text_arabic: string
 }
 
 // --- Analytics ---

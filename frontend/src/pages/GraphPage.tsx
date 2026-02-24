@@ -1,8 +1,9 @@
-// Page graphe — contrôles + visualisation SHARES_ROOT
+// Page graphe — contrôles + visualisation SHARES_ROOT + panneau détail
 // Le header global est géré par AppLayout
 
 import { useState, useCallback } from 'react'
 import SharesRootGraph from '../components/graph/SharesRootGraph'
+import AyahPanel from '../components/graph/AyahPanel'
 import { useAyahNetwork } from '../hooks/useNetwork'
 import { useSurahs } from '../hooks/useSurahs'
 import { GRAPH_DEFAULTS, GRAPH_LIMITS } from '../lib/constants'
@@ -14,6 +15,12 @@ interface SearchParams {
   verse: number
   minRoots: number
   limit: number
+}
+
+/** Nœud sélectionné pour le panneau latéral */
+interface SelectedNode {
+  surah: number
+  verse: number
 }
 
 /** Limite max du slider voisins — cohérent avec la lisibilité du graphe */
@@ -31,6 +38,9 @@ export default function GraphPage() {
 
   // --- Paramètres validés (ce qu'on envoie à l'API) ---
   const [searchParams, setSearchParams] = useState<SearchParams | null>(null)
+
+  // --- Nœud sélectionné pour le panneau latéral (null = panneau fermé) ---
+  const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(null)
 
   // --- Hook API — ne fetch que si searchParams !== null ---
   const { data, isLoading: graphLoading, error: apiError } = useAyahNetwork({
@@ -55,7 +65,7 @@ export default function GraphPage() {
     setSelectedAyah(parseInt(value, 10))
   }, [])
 
-  // --- Lancer la recherche ---
+  // --- Lancer la recherche (bouton Explorer ou panneau) ---
   const handleExplore = useCallback(() => {
     setSearchParams({
       surah: selectedSurah,
@@ -65,23 +75,39 @@ export default function GraphPage() {
     })
   }, [selectedSurah, selectedAyah, minRoots, limit])
 
-  // --- Click sur un nœud du graphe → naviguer ---
+  // --- Click sur un nœud du graphe → ouvrir le panneau latéral ---
   const handleNodeClick = useCallback((nodeId: string) => {
     const [surahStr, ayahStr] = nodeId.split(':')
     const surah = parseInt(surahStr, 10)
-    const ayah = parseInt(ayahStr, 10)
+    const verse = parseInt(ayahStr, 10)
 
-    if (surah && ayah) {
+    if (surah && verse) {
+      // Met à jour les selects pour refléter le nœud cliqué
       setSelectedSurah(surah)
-      setSelectedAyah(ayah)
-      setSearchParams({
-        surah,
-        verse: ayah,
-        minRoots,
-        limit,
-      })
+      setSelectedAyah(verse)
+      // Ouvre le panneau latéral avec les infos du nœud
+      setSelectedNode({ surah, verse })
     }
+  }, [])
+
+  // --- Explorer depuis le panneau → recentrer le graphe sur ce verset ---
+  const handlePanelExplore = useCallback((surah: number, verse: number) => {
+    setSelectedSurah(surah)
+    setSelectedAyah(verse)
+    setSearchParams({
+      surah,
+      verse,
+      minRoots,
+      limit,
+    })
+    // Fermer le panneau après lancement de l'exploration
+    setSelectedNode(null)
   }, [minRoots, limit])
+
+  // --- Fermer le panneau latéral ---
+  const handlePanelClose = useCallback(() => {
+    setSelectedNode(null)
+  }, [])
 
   // --- État de chargement combiné ---
   const isLoading = graphLoading
@@ -238,6 +264,16 @@ export default function GraphPage() {
             data={data}
             surahMap={surahMap}
             onNodeClick={handleNodeClick}
+          />
+        )}
+
+        {/* Panneau latéral — détail du verset cliqué */}
+        {selectedNode && (
+          <AyahPanel
+            surah={selectedNode.surah}
+            verse={selectedNode.verse}
+            onExplore={handlePanelExplore}
+            onClose={handlePanelClose}
           />
         )}
       </main>

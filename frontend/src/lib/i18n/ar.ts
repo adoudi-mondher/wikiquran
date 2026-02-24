@@ -25,6 +25,12 @@ const ar: Dictionary = {
   'graph.surahFallback': 'سورة',
   'graph.rootCount': 'جذر',   // "5 جذر" — pas de pluriel complexe, on garde simple
 
+  // --- Panneau latéral (détail verset) ---
+  'panel.verseDetail': 'تفاصيل الآية',
+  'panel.close': 'إغلاق',
+  'panel.ayah': 'الآية',
+  'panel.explore': 'استكشاف هذه الآية',
+
   // --- Commun ---
   'common.loading': 'جاري التحميل…',
   'common.error': 'خطأ',
