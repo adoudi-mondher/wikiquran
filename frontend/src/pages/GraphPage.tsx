@@ -58,26 +58,27 @@ export default function GraphPage() {
     limit: searchParams?.limit,
   })
 
-  // --- Filtrage côté client : mecquois / médinois ---
+  // --- Filtre par racine (côté client, chaîné après filtre type) ---
+  const [selectedRoot, setSelectedRoot] = useState<string | null>(null)
+
+  // --- Helper pour extraire l'ID d'un lien (ForceGraph2D mute source/target en objets) ---
+  const getLinkId = useCallback((end: unknown): string =>
+    typeof end === 'string' ? end : (end as { id: string }).id
+  , [])
+
+  // --- Étape 1 : filtrage par type (mecquois / médinois) ---
   // Le nœud central est toujours conservé, même s'il ne matche pas le filtre
-  const filteredData = useMemo((): GraphResponse | null => {
+  const typeFilteredData = useMemo((): GraphResponse | null => {
     if (!data) return null
     if (typeFilter === 'all') return data
 
-    // 1. Filtrer les nœuds (garder le centre + ceux qui matchent le type)
     const filteredNodes = data.nodes.filter((node) => {
-      if (node.id === data.center.id) return true  // Toujours garder le centre
+      if (node.id === data.center.id) return true
       const surah = surahMap.get(node.surah_number)
       return surah?.type === typeFilter
     })
 
-    // 2. Set des IDs retenus pour filtrer les liens
     const nodeIds = new Set(filteredNodes.map((n) => n.id))
-
-    // 3. Filtrer les liens — ForceGraph2D mute source/target en objets nœud
-    //    On gère les deux cas : string (avant rendu) et objet (après rendu)
-    const getLinkId = (end: unknown): string =>
-      typeof end === 'string' ? end : (end as { id: string }).id
 
     const filteredLinks = data.links.filter(
       (link) => nodeIds.has(getLinkId(link.source)) && nodeIds.has(getLinkId(link.target))
@@ -87,12 +88,54 @@ export default function GraphPage() {
       center: data.center,
       nodes: filteredNodes,
       links: filteredLinks,
-      meta: {
-        ...data.meta,
-        total_links: data.meta.total_links,  // Total original conservé
-      },
+      meta: { ...data.meta },
     }
-  }, [data, typeFilter, surahMap])
+  }, [data, typeFilter, surahMap, getLinkId])
+
+  // --- Racines disponibles (extraites des liens après filtre type) ---
+  const availableRoots = useMemo((): string[] => {
+    if (!typeFilteredData) return []
+
+    const rootSet = new Set<string>()
+    for (const link of typeFilteredData.links) {
+      for (const root of (link as { roots_ar: string[] }).roots_ar) {
+        rootSet.add(root)
+      }
+    }
+
+    // Tri alphabétique arabe
+    return Array.from(rootSet).sort((a, b) => a.localeCompare(b, 'ar'))
+  }, [typeFilteredData])
+
+  // --- Étape 2 : filtrage par racine ---
+  const filteredData = useMemo((): GraphResponse | null => {
+    if (!typeFilteredData) return null
+    if (!selectedRoot) return typeFilteredData
+
+    // Ne garder que les liens contenant la racine sélectionnée
+    const filteredLinks = typeFilteredData.links.filter((link) =>
+      (link as { roots_ar: string[] }).roots_ar.includes(selectedRoot)
+    )
+
+    // Ne garder que les nœuds connectés par ces liens + le centre
+    const connectedIds = new Set<string>()
+    connectedIds.add(typeFilteredData.center.id)
+    for (const link of filteredLinks) {
+      connectedIds.add(getLinkId(link.source))
+      connectedIds.add(getLinkId(link.target))
+    }
+
+    const filteredNodes = typeFilteredData.nodes.filter(
+      (node) => connectedIds.has(node.id)
+    )
+
+    return {
+      center: typeFilteredData.center,
+      nodes: filteredNodes,
+      links: filteredLinks,
+      meta: { ...typeFilteredData.meta },
+    }
+  }, [typeFilteredData, selectedRoot, getLinkId])
 
   // --- Nombre de versets de la sourate sélectionnée ---
   const ayahCount = surahMap.get(selectedSurah)?.ayas_count ?? 0
@@ -117,6 +160,8 @@ export default function GraphPage() {
       minRoots,
       limit,
     })
+    // Reset les filtres client pour la nouvelle recherche
+    setSelectedRoot(null)
   }, [selectedSurah, selectedAyah, minRoots, limit])
 
   // --- Click sur un nœud du graphe → ouvrir le panneau latéral ---
@@ -144,7 +189,8 @@ export default function GraphPage() {
       minRoots,
       limit,
     })
-    // Fermer le panneau après lancement de l'exploration
+    // Reset les filtres client + fermer le panneau
+    setSelectedRoot(null)
     setSelectedNode(null)
   }, [minRoots, limit])
 
@@ -255,7 +301,7 @@ export default function GraphPage() {
               {(['all', 'meccan', 'medinan'] as SurahTypeFilter[]).map((type) => (
                 <button
                   key={type}
-                  onClick={() => setTypeFilter(type)}
+                  onClick={() => { setTypeFilter(type); setSelectedRoot(null) }}
                   className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors
                     ${typeFilter === type
                       ? 'bg-blue-600 text-white'
@@ -265,6 +311,29 @@ export default function GraphPage() {
                   {t(`filter.${type}`)}
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* Filtre par racine — visible quand il y a des racines disponibles */}
+          {availableRoots.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="root-filter" className="text-xs text-gray-600 dark:text-gray-400">
+                {t('filter.root')}
+              </label>
+              <select
+                id="root-filter"
+                value={selectedRoot ?? ''}
+                onChange={(e) => setSelectedRoot(e.target.value || null)}
+                className="px-3 py-2 bg-white dark:bg-gray-900
+                           border border-gray-300 dark:border-gray-700 rounded-lg
+                           text-gray-900 dark:text-gray-100 text-sm
+                           focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">{t('filter.allRoots')} ({availableRoots.length})</option>
+                {availableRoots.map((root) => (
+                  <option key={root} value={root}>{root}</option>
+                ))}
+              </select>
             </div>
           )}
 

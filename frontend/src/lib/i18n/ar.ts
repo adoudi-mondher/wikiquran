@@ -19,6 +19,8 @@ const ar: Dictionary = {
   'filter.all': 'الكل',
   'filter.meccan': 'مكّية',
   'filter.medinan': 'مدنية',
+  'filter.allRoots': 'كل الجذور',
+  'filter.root': 'الجذر',
 
   // --- Graphe (zone principale) ---
   'graph.idle': 'اختر آية لاستكشاف روابطها',
