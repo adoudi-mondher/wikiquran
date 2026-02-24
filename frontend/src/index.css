@@ -1,6 +1,9 @@
 /* Tailwind v4 — un seul import, zéro config JS */
 @import "tailwindcss";
 
+/* Dark mode via classe .dark sur <html> (au lieu de @media prefers-color-scheme) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Thème personnalisé — remplace tailwind.config.ts */
 @theme {
   /* Polices — priorité à une bonne lisibilité Uthmani */
