@@ -4,6 +4,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import SharesRootGraph from '../components/graph/SharesRootGraph'
 import AyahPanel from '../components/graph/AyahPanel'
+import GraphLegend from '../components/graph/GraphLegend'
 import { useAyahNetwork } from '../hooks/useNetwork'
 import { useSurahs } from '../hooks/useSurahs'
 import { GRAPH_DEFAULTS, GRAPH_LIMITS } from '../lib/constants'
@@ -322,11 +323,18 @@ export default function GraphPage() {
 
         {/* État Success — le graphe (reçoit les données filtrées) */}
         {filteredData && !isLoading && (
-          <SharesRootGraph
-            data={filteredData}
-            surahMap={surahMap}
-            onNodeClick={handleNodeClick}
-          />
+          <>
+            <SharesRootGraph
+              data={filteredData}
+              surahMap={surahMap}
+              onNodeClick={handleNodeClick}
+            />
+            <GraphLegend
+              nodes={filteredData.nodes}
+              surahMap={surahMap}
+              panelOpen={!!selectedNode}
+            />
+          </>
         )}
 
         {/* Panneau latéral — détail du verset cliqué */}
