@@ -71,15 +71,39 @@ export interface AyahDetail {
 // --- Analytics ---
 
 /** Racine dans le classement top-roots */
-export interface TopRoot {
+export interface TopRootEntry {
+  rank: number
   buckwalter: string
   arabic: string
-  verse_count: number
-  occurrence_count: number
+  ayah_count: number
+  occurrences_count: number
 }
 
-/** Comparaison mecquois vs médinois */
-export interface MeccanMedinan {
-  meccan_top: TopRoot[]
-  medinan_top: TopRoot[]
+/** Réponse de GET /analytics/top-roots */
+export interface TopRootsResponse {
+  roots: TopRootEntry[]
+  meta: { limit: number }
+}
+
+/** Info racine dans la réponse réseau racine */
+export interface RootInfo {
+  buckwalter: string
+  arabic: string
+  occurrences_count: number
+  total_ayahs: number
+}
+
+/** Réponse de GET /network/root/{bw} — différente de GraphResponse */
+export interface RootNetworkResponse {
+  root: RootInfo
+  nodes: GraphNode[]
+  links: GraphLink[]
+  meta: {
+    sort: string
+    max_nodes: number
+    min_roots: number
+    limit: number
+    total_nodes: number
+    total_links: number
+  }
 }

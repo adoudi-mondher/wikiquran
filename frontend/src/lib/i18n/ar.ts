@@ -15,6 +15,13 @@ const ar: Dictionary = {
   'controls.maxNeighbors': 'الجيران (حد أقصى)',
   'controls.explore': 'استكشاف',
 
+  // --- Modes de recherche ---
+  'mode.verse': 'آية',
+  'mode.root': 'جذر',
+  'controls.rootSelect': 'اختر جذراً',
+  'controls.rootSearch': 'بحث...',
+  'graph.idleRoot': 'اختر جذراً لاستكشاف الآيات المرتبطة',
+
   // --- Filtre type sourate ---
   'filter.all': 'الكل',
   'filter.meccan': 'مكّية',
@@ -27,6 +34,10 @@ const ar: Dictionary = {
   'stats.meccan': 'مكّية',
   'stats.medinan': 'مدنية',
   'stats.topRoot': 'أكثر جذر مشترك',
+
+  // --- Bandeau racine active ---
+  'rootBanner.ayahs': 'آية',
+  'rootBanner.occurrences': 'ورود',
 
   // --- Graphe (zone principale) ---
   'graph.idle': 'اختر آية لاستكشاف روابطها',
@@ -48,6 +59,7 @@ const ar: Dictionary = {
   'common.loading': 'جاري التحميل…',
   'common.error': 'خطأ',
   'common.unknownError': 'خطأ غير معروف',
+  'common.ayah': 'آية',
 }
 
 export default ar

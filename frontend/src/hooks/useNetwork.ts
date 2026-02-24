@@ -3,7 +3,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '../api/client'
-import type { GraphResponse } from '../types/api'
+import type { GraphResponse, RootNetworkResponse } from '../types/api'
 
 /** Paramètres pour le sous-graphe d'un verset */
 interface AyahNetworkParams {
@@ -48,7 +48,7 @@ export function useRootNetwork({ buckwalter, sort, maxNodes, minRoots, limit }: 
   return useQuery({
     queryKey: ['network', 'root', buckwalter, sort, maxNodes, minRoots, limit],
     queryFn: () =>
-      apiFetch<GraphResponse>(`/network/root/${buckwalter}`, {
+      apiFetch<RootNetworkResponse>(`/network/root/${buckwalter}`, {
         ...(sort && { sort }),
         ...(maxNodes !== undefined && { max_nodes: maxNodes }),
         ...(minRoots !== undefined && { min_roots: minRoots }),

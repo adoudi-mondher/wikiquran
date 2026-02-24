@@ -1,4 +1,6 @@
-// Page graphe — contrôles + visualisation SHARES_ROOT + panneau détail
+// Page graphe — deux modes d'exploration (verset / racine)
+// Mode verset : sous-graphe SHARES_ROOT autour d'un verset
+// Mode racine : tous les versets partageant une racine donnée
 // Le header global est géré par AppLayout
 
 import { useState, useCallback, useMemo } from 'react'
@@ -6,61 +8,96 @@ import SharesRootGraph from '../components/graph/SharesRootGraph'
 import AyahPanel from '../components/graph/AyahPanel'
 import GraphLegend from '../components/graph/GraphLegend'
 import GraphStats from '../components/graph/GraphStats'
-import { useAyahNetwork } from '../hooks/useNetwork'
+import { useAyahNetwork, useRootNetwork } from '../hooks/useNetwork'
 import { useSurahs } from '../hooks/useSurahs'
+import { useRoots } from '../hooks/useRoots'
 import { GRAPH_DEFAULTS, GRAPH_LIMITS } from '../lib/constants'
 import { t } from '../lib/i18n'
 import type { GraphResponse } from '../types/api'
 
-/** Paramètres validés prêts pour l'API */
-interface SearchParams {
+// --- Types locaux ---
+
+type ExploreMode = 'verse' | 'root'
+
+interface VerseSearchParams {
   surah: number
   verse: number
   minRoots: number
   limit: number
 }
 
-/** Nœud sélectionné pour le panneau latéral */
 interface SelectedNode {
   surah: number
   verse: number
 }
 
-/** Types de filtrage par révélation */
 type SurahTypeFilter = 'all' | 'meccan' | 'medinan'
 
-/** Limite max du slider voisins — cohérent avec la lisibilité du graphe */
 const LIMIT_MAX = 100
 
 export default function GraphPage() {
-  // --- Données de référence (chargées une seule fois) ---
+  // --- Données de référence ---
   const { surahs, surahMap, isLoading: surahsLoading } = useSurahs()
+  const { roots, isLoading: rootsLoading } = useRoots()
 
-  // --- État des contrôles ---
-  const [selectedSurah, setSelectedSurah] = useState(2)       // Al-Baqarah par défaut
-  const [selectedAyah, setSelectedAyah] = useState(255)        // Ayat al-Kursi par défaut
+  // --- Mode d'exploration ---
+  const [mode, setMode] = useState<ExploreMode>('verse')
+
+  // --- Contrôles mode verset ---
+  const [selectedSurah, setSelectedSurah] = useState(2)
+  const [selectedAyah, setSelectedAyah] = useState(255)
   const [minRoots, setMinRoots] = useState(GRAPH_DEFAULTS.minRoots)
   const [limit, setLimit] = useState(GRAPH_DEFAULTS.limit)
+  const [verseSearchParams, setVerseSearchParams] = useState<VerseSearchParams | null>(null)
 
-  // --- Filtre mecquois/médinois (côté client) ---
+  // --- Contrôles mode racine ---
+  const [selectedRootBw, setSelectedRootBw] = useState('')   // Buckwalter pour l'API
+  const [activeRootBw, setActiveRootBw] = useState('')        // Buckwalter validé (après click Explorer)
+
+  // --- Filtres client (partagés entre les deux modes) ---
   const [typeFilter, setTypeFilter] = useState<SurahTypeFilter>('all')
+  const [selectedRoot, setSelectedRoot] = useState<string | null>(null)
 
-  // --- Paramètres validés (ce qu'on envoie à l'API) ---
-  const [searchParams, setSearchParams] = useState<SearchParams | null>(null)
-
-  // --- Nœud sélectionné pour le panneau latéral (null = panneau fermé) ---
+  // --- Panneau latéral ---
   const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(null)
 
-  // --- Hook API — ne fetch que si searchParams !== null ---
-  const { data, isLoading: graphLoading, error: apiError } = useAyahNetwork({
-    surah: searchParams?.surah ?? 0,
-    verse: searchParams?.verse ?? 0,
-    minRoots: searchParams?.minRoots,
-    limit: searchParams?.limit,
+  // --- Hook API mode verset ---
+  const { data: verseData, isLoading: verseLoading, error: verseError } = useAyahNetwork({
+    surah: verseSearchParams?.surah ?? 0,
+    verse: verseSearchParams?.verse ?? 0,
+    minRoots: verseSearchParams?.minRoots,
+    limit: verseSearchParams?.limit,
   })
 
-  // --- Filtre par racine (côté client, chaîné après filtre type) ---
-  const [selectedRoot, setSelectedRoot] = useState<string | null>(null)
+  // --- Hook API mode racine (tri par connectivité → hubs sémantiques) ---
+  const { data: rootData, isLoading: rootLoading, error: rootError } = useRootNetwork({
+    buckwalter: activeRootBw,
+    sort: 'connected',
+  })
+
+  // --- Normalisation : convertir les deux formats en GraphResponse ---
+  const rawData = useMemo((): GraphResponse | null => {
+    if (mode === 'verse') return verseData ?? null
+
+    if (!rootData || rootData.nodes.length === 0) return null
+
+    // Le réseau racine n'a pas de center — on prend le premier nœud
+    return {
+      center: rootData.nodes[0],
+      nodes: rootData.nodes,
+      links: rootData.links,
+      meta: {
+        min_roots: rootData.meta.min_roots,
+        limit: rootData.meta.limit,
+        total_links: rootData.meta.total_links,
+      },
+    }
+  }, [mode, verseData, rootData])
+
+  // --- État de chargement et erreur selon le mode ---
+  const isLoading = mode === 'verse' ? verseLoading : rootLoading
+  const apiError = mode === 'verse' ? verseError : rootError
+  const hasSearched = mode === 'verse' ? verseSearchParams !== null : activeRootBw.length > 0
 
   // --- Helper pour extraire l'ID d'un lien (ForceGraph2D mute source/target en objets) ---
   const getLinkId = useCallback((end: unknown): string =>
@@ -68,30 +105,29 @@ export default function GraphPage() {
   , [])
 
   // --- Étape 1 : filtrage par type (mecquois / médinois) ---
-  // Le nœud central est toujours conservé, même s'il ne matche pas le filtre
   const typeFilteredData = useMemo((): GraphResponse | null => {
-    if (!data) return null
-    if (typeFilter === 'all') return data
+    if (!rawData) return null
+    if (typeFilter === 'all') return rawData
 
-    const filteredNodes = data.nodes.filter((node) => {
-      if (node.id === data.center.id) return true
+    const filteredNodes = rawData.nodes.filter((node) => {
+      if (node.id === rawData.center.id) return true
       const surah = surahMap.get(node.surah_number)
       return surah?.type === typeFilter
     })
 
     const nodeIds = new Set(filteredNodes.map((n) => n.id))
 
-    const filteredLinks = data.links.filter(
+    const filteredLinks = rawData.links.filter(
       (link) => nodeIds.has(getLinkId(link.source)) && nodeIds.has(getLinkId(link.target))
     )
 
     return {
-      center: data.center,
+      center: rawData.center,
       nodes: filteredNodes,
       links: filteredLinks,
-      meta: { ...data.meta },
+      meta: { ...rawData.meta },
     }
-  }, [data, typeFilter, surahMap, getLinkId])
+  }, [rawData, typeFilter, surahMap, getLinkId])
 
   // --- Racines disponibles (extraites des liens après filtre type) ---
   const availableRoots = useMemo((): string[] => {
@@ -104,7 +140,6 @@ export default function GraphPage() {
       }
     }
 
-    // Tri alphabétique arabe
     return Array.from(rootSet).sort((a, b) => a.localeCompare(b, 'ar'))
   }, [typeFilteredData])
 
@@ -113,12 +148,10 @@ export default function GraphPage() {
     if (!typeFilteredData) return null
     if (!selectedRoot) return typeFilteredData
 
-    // Ne garder que les liens contenant la racine sélectionnée
     const filteredLinks = typeFilteredData.links.filter((link) =>
       (link as { roots_ar: string[] }).roots_ar.includes(selectedRoot)
     )
 
-    // Ne garder que les nœuds connectés par ces liens + le centre
     const connectedIds = new Set<string>()
     connectedIds.add(typeFilteredData.center.id)
     for (const link of filteredLinks) {
@@ -141,67 +174,77 @@ export default function GraphPage() {
   // --- Nombre de versets de la sourate sélectionnée ---
   const ayahCount = surahMap.get(selectedSurah)?.ayas_count ?? 0
 
-  // --- Changement de sourate → reset ayah à 1 ---
+  // --- Handlers ---
+
+  const handleModeChange = useCallback((newMode: ExploreMode) => {
+    setMode(newMode)
+    setSelectedNode(null)
+    setTypeFilter('all')
+    setSelectedRoot(null)
+  }, [])
+
   const handleSurahChange = useCallback((value: string) => {
     const num = parseInt(value, 10)
     setSelectedSurah(num)
-    setSelectedAyah(1)  // Reset — la nouvelle sourate peut avoir moins de versets
+    setSelectedAyah(1)
   }, [])
 
-  // --- Changement d'ayah ---
   const handleAyahChange = useCallback((value: string) => {
     setSelectedAyah(parseInt(value, 10))
   }, [])
 
-  // --- Lancer la recherche (bouton Explorer ou panneau) ---
   const handleExplore = useCallback(() => {
-    setSearchParams({
-      surah: selectedSurah,
-      verse: selectedAyah,
-      minRoots,
-      limit,
-    })
-    // Reset les filtres client pour la nouvelle recherche
+    if (mode === 'verse') {
+      setVerseSearchParams({
+        surah: selectedSurah,
+        verse: selectedAyah,
+        minRoots,
+        limit,
+      })
+    } else {
+      setActiveRootBw(selectedRootBw)
+    }
+    // Reset les filtres client
+    setTypeFilter('all')
     setSelectedRoot(null)
-  }, [selectedSurah, selectedAyah, minRoots, limit])
+    setSelectedNode(null)
+  }, [mode, selectedSurah, selectedAyah, minRoots, limit, selectedRootBw])
 
-  // --- Click sur un nœud du graphe → ouvrir le panneau latéral ---
   const handleNodeClick = useCallback((nodeId: string) => {
     const [surahStr, ayahStr] = nodeId.split(':')
     const surah = parseInt(surahStr, 10)
     const verse = parseInt(ayahStr, 10)
 
     if (surah && verse) {
-      // Met à jour les selects pour refléter le nœud cliqué
       setSelectedSurah(surah)
       setSelectedAyah(verse)
-      // Ouvre le panneau latéral avec les infos du nœud
       setSelectedNode({ surah, verse })
     }
   }, [])
 
-  // --- Explorer depuis le panneau → recentrer le graphe sur ce verset ---
   const handlePanelExplore = useCallback((surah: number, verse: number) => {
+    // Depuis le panneau, on explore toujours en mode verset
+    setMode('verse')
     setSelectedSurah(surah)
     setSelectedAyah(verse)
-    setSearchParams({
+    setVerseSearchParams({
       surah,
       verse,
       minRoots,
       limit,
     })
-    // Reset les filtres client + fermer le panneau
+    setTypeFilter('all')
     setSelectedRoot(null)
     setSelectedNode(null)
   }, [minRoots, limit])
 
-  // --- Fermer le panneau latéral ---
   const handlePanelClose = useCallback(() => {
     setSelectedNode(null)
   }, [])
 
-  // --- État de chargement combiné ---
-  const isLoading = graphLoading
+  // --- Bouton Explorer désactivé si rien de sélectionné ---
+  const exploreDisabled = isLoading || surahsLoading
+    || (mode === 'root' && selectedRootBw === '')
 
   return (
     <>
@@ -209,86 +252,130 @@ export default function GraphPage() {
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
         <div className="flex flex-wrap items-end gap-6">
 
-          {/* Select sourate */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="surah-select" className="text-xs text-gray-600 dark:text-gray-400">
-              {t('controls.surah')}
-            </label>
-            <select
-              id="surah-select"
-              value={selectedSurah}
-              onChange={(e) => handleSurahChange(e.target.value)}
-              disabled={surahsLoading}
-              className="px-3 py-2 bg-white dark:bg-gray-900
-                         border border-gray-300 dark:border-gray-700 rounded-lg
-                         text-gray-900 dark:text-gray-100 text-sm
-                         focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            >
-              {surahs.map((s) => (
-                <option key={s.number} value={s.number}>
-                  {s.number}. {s.name_arabic}
-                </option>
-              ))}
-            </select>
+          {/* Toggle mode */}
+          <div className="flex items-center gap-1">
+            {(['verse', 'root'] as ExploreMode[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => handleModeChange(m)}
+                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                  ${mode === m
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+              >
+                {t(`mode.${m}`)}
+              </button>
+            ))}
           </div>
 
-          {/* Select ayah */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="ayah-select" className="text-xs text-gray-600 dark:text-gray-400">
-              {t('controls.ayah')}
-            </label>
-            <select
-              id="ayah-select"
-              value={selectedAyah}
-              onChange={(e) => handleAyahChange(e.target.value)}
-              disabled={ayahCount === 0}
-              className="w-24 px-3 py-2 bg-white dark:bg-gray-900
-                         border border-gray-300 dark:border-gray-700 rounded-lg
-                         text-gray-900 dark:text-gray-100 text-sm
-                         focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            >
-              {Array.from({ length: ayahCount }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </div>
+          {/* --- Contrôles mode verset --- */}
+          {mode === 'verse' && (
+            <>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="surah-select" className="text-xs text-gray-600 dark:text-gray-400">
+                  {t('controls.surah')}
+                </label>
+                <select
+                  id="surah-select"
+                  value={selectedSurah}
+                  onChange={(e) => handleSurahChange(e.target.value)}
+                  disabled={surahsLoading}
+                  className="px-3 py-2 bg-white dark:bg-gray-900
+                             border border-gray-300 dark:border-gray-700 rounded-lg
+                             text-gray-900 dark:text-gray-100 text-sm
+                             focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                >
+                  {surahs.map((s) => (
+                    <option key={s.number} value={s.number}>
+                      {s.number}. {s.name_arabic}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Slider min_roots */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="min-roots" className="text-xs text-gray-600 dark:text-gray-400">
-              {t('controls.minRoots')} : {minRoots}
-            </label>
-            <input
-              id="min-roots"
-              type="range"
-              min={GRAPH_LIMITS.minRoots.min}
-              max={GRAPH_LIMITS.minRoots.max}
-              value={minRoots}
-              onChange={(e) => setMinRoots(parseInt(e.target.value, 10))}
-              className="w-32 accent-blue-500"
-            />
-          </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="ayah-select" className="text-xs text-gray-600 dark:text-gray-400">
+                  {t('controls.ayah')}
+                </label>
+                <select
+                  id="ayah-select"
+                  value={selectedAyah}
+                  onChange={(e) => handleAyahChange(e.target.value)}
+                  disabled={ayahCount === 0}
+                  className="w-24 px-3 py-2 bg-white dark:bg-gray-900
+                             border border-gray-300 dark:border-gray-700 rounded-lg
+                             text-gray-900 dark:text-gray-100 text-sm
+                             focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                >
+                  {Array.from({ length: ayahCount }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Slider limit */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="limit" className="text-xs text-gray-600 dark:text-gray-400">
-              {t('controls.maxNeighbors')} : {limit}
-            </label>
-            <input
-              id="limit"
-              type="range"
-              min={1}
-              max={LIMIT_MAX}
-              value={limit}
-              onChange={(e) => setLimit(parseInt(e.target.value, 10))}
-              className="w-40 accent-blue-500"
-            />
-          </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="min-roots" className="text-xs text-gray-600 dark:text-gray-400">
+                  {t('controls.minRoots')} : {minRoots}
+                </label>
+                <input
+                  id="min-roots"
+                  type="range"
+                  min={GRAPH_LIMITS.minRoots.min}
+                  max={GRAPH_LIMITS.minRoots.max}
+                  value={minRoots}
+                  onChange={(e) => setMinRoots(parseInt(e.target.value, 10))}
+                  className="w-32 accent-blue-500"
+                />
+              </div>
 
-          {/* Bouton Explorer */}
+              <div className="flex flex-col gap-1">
+                <label htmlFor="limit" className="text-xs text-gray-600 dark:text-gray-400">
+                  {t('controls.maxNeighbors')} : {limit}
+                </label>
+                <input
+                  id="limit"
+                  type="range"
+                  min={1}
+                  max={LIMIT_MAX}
+                  value={limit}
+                  onChange={(e) => setLimit(parseInt(e.target.value, 10))}
+                  className="w-40 accent-blue-500"
+                />
+              </div>
+            </>
+          )}
+
+          {/* --- Contrôles mode racine --- */}
+          {mode === 'root' && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="root-select" className="text-xs text-gray-600 dark:text-gray-400">
+                {t('controls.rootSelect')}
+              </label>
+              <select
+                id="root-select"
+                value={selectedRootBw}
+                onChange={(e) => setSelectedRootBw(e.target.value)}
+                disabled={rootsLoading}
+                className="px-3 py-2 bg-white dark:bg-gray-900
+                           border border-gray-300 dark:border-gray-700 rounded-lg
+                           text-gray-900 dark:text-gray-100 text-sm
+                           focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">{rootsLoading ? t('common.loading') : t('controls.rootSearch')}</option>
+                {roots.map((r) => (
+                  <option key={r.buckwalter} value={r.buckwalter}>
+                    {r.arabic} — {r.ayah_count} {t('common.ayah')}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Bouton Explorer (partagé) */}
           <button
             onClick={handleExplore}
-            disabled={isLoading || surahsLoading}
+            disabled={exploreDisabled}
             className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg
                        hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed
                        transition-colors"
@@ -296,7 +383,7 @@ export default function GraphPage() {
             {isLoading ? t('common.loading') : t('controls.explore')}
           </button>
 
-          {/* Filtre mecquois / médinois — visible uniquement quand le graphe est affiché */}
+          {/* Filtre mecquois / médinois */}
           {filteredData && (
             <div className="flex items-center gap-1">
               {(['all', 'meccan', 'medinan'] as SurahTypeFilter[]).map((type) => (
@@ -315,7 +402,7 @@ export default function GraphPage() {
             </div>
           )}
 
-          {/* Filtre par racine — visible quand il y a des racines disponibles */}
+          {/* Filtre par racine (dans les liens) */}
           {availableRoots.length > 0 && (
             <div className="flex flex-col gap-1">
               <label htmlFor="root-filter" className="text-xs text-gray-600 dark:text-gray-400">
@@ -342,8 +429,8 @@ export default function GraphPage() {
           {filteredData && (
             <span className="text-xs text-gray-500 self-center">
               {filteredData.nodes.length} {t('graph.nodes')} · {filteredData.links.length} {t('graph.links')}
-              {data && data.meta.total_links > filteredData.links.length && (
-                <> · {data.meta.total_links} {t('graph.totalFiltered')}</>
+              {rawData && rawData.meta.total_links > filteredData.links.length && (
+                <> · {rawData.meta.total_links} {t('graph.totalFiltered')}</>
               )}
             </span>
           )}
@@ -352,17 +439,21 @@ export default function GraphPage() {
 
       {/* --- Zone principale --- */}
       <main className="flex-1 relative">
-        {/* État Idle — pas encore de recherche */}
-        {!searchParams && !isLoading && (
+        {/* État Idle */}
+        {!hasSearched && !isLoading && (
           <div className="absolute inset-0 flex items-center justify-center
                           text-gray-400 dark:text-gray-600">
             <div className="text-center">
-              <p className="text-lg mb-2">{t('graph.idle')}</p>
-              <p className="text-sm">
-                <span className="text-gray-500 dark:text-gray-400">
-                  {t('graph.idleExample')}
-                </span>
+              <p className="text-lg mb-2">
+                {mode === 'verse' ? t('graph.idle') : t('graph.idleRoot')}
               </p>
+              {mode === 'verse' && (
+                <p className="text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">
+                    {t('graph.idleExample')}
+                  </span>
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -391,7 +482,7 @@ export default function GraphPage() {
           </div>
         )}
 
-        {/* État Success — le graphe (reçoit les données filtrées) */}
+        {/* État Success — le graphe */}
         {filteredData && !isLoading && (
           <>
             <SharesRootGraph
@@ -399,6 +490,22 @@ export default function GraphPage() {
               surahMap={surahMap}
               onNodeClick={handleNodeClick}
             />
+
+            {/* Bandeau racine active — mode racine uniquement, au-dessus de la légende */}
+            {mode === 'root' && rootData?.root && (
+              <div className="absolute bottom-14 end-3 z-10
+                              bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm
+                              rounded-lg border border-gray-200 dark:border-gray-800
+                              px-4 py-2 text-center">
+                <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  {rootData.root.arabic}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 mx-2">
+                  {rootData.root.total_ayahs} {t('rootBanner.ayahs')} · {rootData.root.occurrences_count} {t('rootBanner.occurrences')}
+                </span>
+              </div>
+            )}
+
             <GraphStats
               data={filteredData}
               surahMap={surahMap}
@@ -411,7 +518,7 @@ export default function GraphPage() {
           </>
         )}
 
-        {/* Panneau latéral — détail du verset cliqué */}
+        {/* Panneau latéral */}
         {selectedNode && (
           <AyahPanel
             surah={selectedNode.surah}
