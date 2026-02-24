@@ -5,6 +5,7 @@
 import { useRef, useCallback, useMemo } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useContainerSize } from '../../hooks/useContainerSize'
+import { useTheme } from '../../lib/theme/ThemeProvider'
 import { t } from '../../lib/i18n'
 import { surahColor } from '../../lib/constants'
 import type { GraphResponse, GraphNode, GraphLink, Surah } from '../../types/api'
@@ -37,7 +38,25 @@ const FONT_SIZE_CENTER = 4.5    // Taille police dans le nœud central
 const LINK_BASE_WIDTH = 0.5     // Épaisseur de base des liens
 const LINK_WEIGHT_SCALE = 0.8   // Multiplicateur poids → épaisseur
 
+// --- Couleurs Canvas par thème (hors portée de Tailwind) ---
+const CANVAS_COLORS = {
+  dark: {
+    centerBorder: '#ffffff',          // Bordure blanche sur fond sombre
+    labelText: '#ffffff',             // Texte blanc dans les cercles colorés
+    linkColor: 'rgba(255, 255, 255, 0.15)',  // Liens clairs semi-transparents
+  },
+  light: {
+    centerBorder: '#1f2937',          // Bordure gris foncé sur fond clair
+    labelText: '#ffffff',             // Texte blanc — lisible sur cercles colorés
+    linkColor: 'rgba(0, 0, 0, 0.15)',        // Liens sombres semi-transparents
+  },
+} as const
+
 export default function SharesRootGraph({ data, surahMap, onNodeClick }: SharesRootGraphProps) {
+  // --- Thème pour les couleurs Canvas ---
+  const { theme } = useTheme()
+  const colors = CANVAS_COLORS[theme]
+
   // --- Dimensions responsives ---
   const containerRef = useRef<HTMLDivElement>(null)
   const { width, height } = useContainerSize(containerRef)
@@ -66,9 +85,9 @@ export default function SharesRootGraph({ data, surahMap, onNodeClick }: SharesR
     ctx.fillStyle = color
     ctx.fill()
 
-    // Bordure blanche sur le nœud central pour le distinguer
+    // Bordure sur le nœud central pour le distinguer
     if (isCenter) {
-      ctx.strokeStyle = '#ffffff'
+      ctx.strokeStyle = colors.centerBorder
       ctx.lineWidth = CENTER_BORDER
       ctx.stroke()
     }
@@ -80,10 +99,10 @@ export default function SharesRootGraph({ data, surahMap, onNodeClick }: SharesR
       ctx.font = `bold ${fontSize}px Inter, sans-serif`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'  // Centré verticalement dans le cercle
-      ctx.fillStyle = '#ffffff'
+      ctx.fillStyle = colors.labelText
       ctx.fillText(label, node.x, node.y)
     }
-  }, [centerId])
+  }, [centerId, colors])
 
   // --- Zone de détection du pointeur pour chaque nœud ---
   const drawNodePointerArea = useCallback((node: FGNode, color: string, ctx: CanvasRenderingContext2D) => {
@@ -117,10 +136,10 @@ export default function SharesRootGraph({ data, surahMap, onNodeClick }: SharesR
     return LINK_BASE_WIDTH + (link as GraphLink).weight * LINK_WEIGHT_SCALE
   }, [])
 
-  // --- Couleur des liens (semi-transparente) ---
+  // --- Couleur des liens — adaptée au thème ---
   const linkColor = useCallback((): string => {
-    return 'rgba(255, 255, 255, 0.15)'
-  }, [])
+    return colors.linkColor
+  }, [colors])
 
   // --- Click sur un nœud ---
   const handleNodeClick = useCallback((node: FGNode) => {

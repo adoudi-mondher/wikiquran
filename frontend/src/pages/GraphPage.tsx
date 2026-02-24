@@ -3,6 +3,7 @@
 
 import { useState, useCallback } from 'react'
 import SharesRootGraph from '../components/graph/SharesRootGraph'
+import ThemeToggle from '../components/ThemeToggle'
 import { useAyahNetwork } from '../hooks/useNetwork'
 import { useSurahs } from '../hooks/useSurahs'
 import { GRAPH_DEFAULTS, GRAPH_LIMITS } from '../lib/constants'
@@ -90,21 +91,23 @@ export default function GraphPage() {
   const isLoading = graphLoading
 
   return (
-    <div dir={dir} className="h-screen flex flex-col bg-gray-950">
+    <div dir={dir} className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
       {/* --- Header --- */}
-      <header className="px-6 py-4 border-b border-gray-800 shrink-0">
-        <h1 className="text-xl font-semibold text-gray-100">
+      <header className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0
+                          flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
           {t('app.title')}
         </h1>
+        <ThemeToggle />
       </header>
 
       {/* --- Barre de contrôles --- */}
-      <div className="px-6 py-4 border-b border-gray-800 shrink-0">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
         <div className="flex flex-wrap items-end gap-6">
 
           {/* Select sourate */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="surah-select" className="text-xs text-gray-400">
+            <label htmlFor="surah-select" className="text-xs text-gray-600 dark:text-gray-400">
               {t('controls.surah')}
             </label>
             <select
@@ -112,8 +115,9 @@ export default function GraphPage() {
               value={selectedSurah}
               onChange={(e) => handleSurahChange(e.target.value)}
               disabled={surahsLoading}
-              className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg
-                         text-gray-100 text-sm
+              className="px-3 py-2 bg-white dark:bg-gray-900
+                         border border-gray-300 dark:border-gray-700 rounded-lg
+                         text-gray-900 dark:text-gray-100 text-sm
                          focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               {surahs.map((s) => (
@@ -126,7 +130,7 @@ export default function GraphPage() {
 
           {/* Select ayah */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="ayah-select" className="text-xs text-gray-400">
+            <label htmlFor="ayah-select" className="text-xs text-gray-600 dark:text-gray-400">
               {t('controls.ayah')}
             </label>
             <select
@@ -134,8 +138,9 @@ export default function GraphPage() {
               value={selectedAyah}
               onChange={(e) => handleAyahChange(e.target.value)}
               disabled={ayahCount === 0}
-              className="w-24 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg
-                         text-gray-100 text-sm
+              className="w-24 px-3 py-2 bg-white dark:bg-gray-900
+                         border border-gray-300 dark:border-gray-700 rounded-lg
+                         text-gray-900 dark:text-gray-100 text-sm
                          focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               {Array.from({ length: ayahCount }, (_, i) => i + 1).map((n) => (
@@ -146,7 +151,7 @@ export default function GraphPage() {
 
           {/* Slider min_roots */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="min-roots" className="text-xs text-gray-400">
+            <label htmlFor="min-roots" className="text-xs text-gray-600 dark:text-gray-400">
               {t('controls.minRoots')} : {minRoots}
             </label>
             <input
@@ -162,7 +167,7 @@ export default function GraphPage() {
 
           {/* Slider limit */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="limit" className="text-xs text-gray-400">
+            <label htmlFor="limit" className="text-xs text-gray-600 dark:text-gray-400">
               {t('controls.maxNeighbors')} : {limit}
             </label>
             <input
@@ -203,11 +208,14 @@ export default function GraphPage() {
       <main className="flex-1 relative">
         {/* État Idle — pas encore de recherche */}
         {!searchParams && !isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-600">
+          <div className="absolute inset-0 flex items-center justify-center
+                          text-gray-400 dark:text-gray-600">
             <div className="text-center">
               <p className="text-lg mb-2">{t('graph.idle')}</p>
               <p className="text-sm">
-                <span className="text-gray-400">{t('graph.idleExample')}</span>
+                <span className="text-gray-500 dark:text-gray-400">
+                  {t('graph.idleExample')}
+                </span>
               </p>
             </div>
           </div>
@@ -218,7 +226,9 @@ export default function GraphPage() {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-sm text-gray-400">{t('graph.exploring')}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t('graph.exploring')}
+              </p>
             </div>
           </div>
         )}
@@ -227,8 +237,8 @@ export default function GraphPage() {
         {apiError && !isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center max-w-md px-6">
-              <p className="text-red-400 mb-2">{t('common.error')}</p>
-              <p className="text-sm text-gray-400">
+              <p className="text-red-600 dark:text-red-400 mb-2">{t('common.error')}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {apiError instanceof Error ? apiError.message : t('common.unknownError')}
               </p>
             </div>
