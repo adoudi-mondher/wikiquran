@@ -22,6 +22,12 @@ const ar: Dictionary = {
   'filter.allRoots': 'كل الجذور',
   'filter.root': 'الجذر',
 
+  // --- Stats en temps réel ---
+  'stats.surahs': 'سور',
+  'stats.meccan': 'مكّية',
+  'stats.medinan': 'مدنية',
+  'stats.topRoot': 'أكثر جذر مشترك',
+
   // --- Graphe (zone principale) ---
   'graph.idle': 'اختر آية لاستكشاف روابطها',
   'graph.idleExample': 'مثال: البقرة، الآية 255 (آية الكرسي)',

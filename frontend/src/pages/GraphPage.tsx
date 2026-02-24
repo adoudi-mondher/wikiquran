@@ -5,6 +5,7 @@ import { useState, useCallback, useMemo } from 'react'
 import SharesRootGraph from '../components/graph/SharesRootGraph'
 import AyahPanel from '../components/graph/AyahPanel'
 import GraphLegend from '../components/graph/GraphLegend'
+import GraphStats from '../components/graph/GraphStats'
 import { useAyahNetwork } from '../hooks/useNetwork'
 import { useSurahs } from '../hooks/useSurahs'
 import { GRAPH_DEFAULTS, GRAPH_LIMITS } from '../lib/constants'
@@ -397,6 +398,10 @@ export default function GraphPage() {
               data={filteredData}
               surahMap={surahMap}
               onNodeClick={handleNodeClick}
+            />
+            <GraphStats
+              data={filteredData}
+              surahMap={surahMap}
             />
             <GraphLegend
               nodes={filteredData.nodes}
