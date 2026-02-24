@@ -15,6 +15,11 @@ const ar: Dictionary = {
   'controls.maxNeighbors': 'الجيران (حد أقصى)',
   'controls.explore': 'استكشاف',
 
+  // --- Filtre type sourate ---
+  'filter.all': 'الكل',
+  'filter.meccan': 'مكّية',
+  'filter.medinan': 'مدنية',
+
   // --- Graphe (zone principale) ---
   'graph.idle': 'اختر آية لاستكشاف روابطها',
   'graph.idleExample': 'مثال: البقرة، الآية 255 (آية الكرسي)',

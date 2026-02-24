@@ -1,13 +1,14 @@
 // Page graphe — contrôles + visualisation SHARES_ROOT + panneau détail
 // Le header global est géré par AppLayout
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import SharesRootGraph from '../components/graph/SharesRootGraph'
 import AyahPanel from '../components/graph/AyahPanel'
 import { useAyahNetwork } from '../hooks/useNetwork'
 import { useSurahs } from '../hooks/useSurahs'
 import { GRAPH_DEFAULTS, GRAPH_LIMITS } from '../lib/constants'
 import { t } from '../lib/i18n'
+import type { GraphResponse } from '../types/api'
 
 /** Paramètres validés prêts pour l'API */
 interface SearchParams {
@@ -23,6 +24,9 @@ interface SelectedNode {
   verse: number
 }
 
+/** Types de filtrage par révélation */
+type SurahTypeFilter = 'all' | 'meccan' | 'medinan'
+
 /** Limite max du slider voisins — cohérent avec la lisibilité du graphe */
 const LIMIT_MAX = 100
 
@@ -35,6 +39,9 @@ export default function GraphPage() {
   const [selectedAyah, setSelectedAyah] = useState(255)        // Ayat al-Kursi par défaut
   const [minRoots, setMinRoots] = useState(GRAPH_DEFAULTS.minRoots)
   const [limit, setLimit] = useState(GRAPH_DEFAULTS.limit)
+
+  // --- Filtre mecquois/médinois (côté client) ---
+  const [typeFilter, setTypeFilter] = useState<SurahTypeFilter>('all')
 
   // --- Paramètres validés (ce qu'on envoie à l'API) ---
   const [searchParams, setSearchParams] = useState<SearchParams | null>(null)
@@ -49,6 +56,42 @@ export default function GraphPage() {
     minRoots: searchParams?.minRoots,
     limit: searchParams?.limit,
   })
+
+  // --- Filtrage côté client : mecquois / médinois ---
+  // Le nœud central est toujours conservé, même s'il ne matche pas le filtre
+  const filteredData = useMemo((): GraphResponse | null => {
+    if (!data) return null
+    if (typeFilter === 'all') return data
+
+    // 1. Filtrer les nœuds (garder le centre + ceux qui matchent le type)
+    const filteredNodes = data.nodes.filter((node) => {
+      if (node.id === data.center.id) return true  // Toujours garder le centre
+      const surah = surahMap.get(node.surah_number)
+      return surah?.type === typeFilter
+    })
+
+    // 2. Set des IDs retenus pour filtrer les liens
+    const nodeIds = new Set(filteredNodes.map((n) => n.id))
+
+    // 3. Filtrer les liens — ForceGraph2D mute source/target en objets nœud
+    //    On gère les deux cas : string (avant rendu) et objet (après rendu)
+    const getLinkId = (end: unknown): string =>
+      typeof end === 'string' ? end : (end as { id: string }).id
+
+    const filteredLinks = data.links.filter(
+      (link) => nodeIds.has(getLinkId(link.source)) && nodeIds.has(getLinkId(link.target))
+    )
+
+    return {
+      center: data.center,
+      nodes: filteredNodes,
+      links: filteredLinks,
+      meta: {
+        ...data.meta,
+        total_links: data.meta.total_links,  // Total original conservé
+      },
+    }
+  }, [data, typeFilter, surahMap])
 
   // --- Nombre de versets de la sourate sélectionnée ---
   const ayahCount = surahMap.get(selectedSurah)?.ayas_count ?? 0
@@ -205,11 +248,30 @@ export default function GraphPage() {
             {isLoading ? t('common.loading') : t('controls.explore')}
           </button>
 
+          {/* Filtre mecquois / médinois — visible uniquement quand le graphe est affiché */}
+          {filteredData && (
+            <div className="flex items-center gap-1">
+              {(['all', 'meccan', 'medinan'] as SurahTypeFilter[]).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setTypeFilter(type)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors
+                    ${typeFilter === type
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                >
+                  {t(`filter.${type}`)}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Métadonnées du résultat */}
-          {data && (
+          {filteredData && (
             <span className="text-xs text-gray-500 self-center">
-              {data.nodes.length} {t('graph.nodes')} · {data.links.length} {t('graph.links')}
-              {data.meta.total_links > data.links.length && (
+              {filteredData.nodes.length} {t('graph.nodes')} · {filteredData.links.length} {t('graph.links')}
+              {data && data.meta.total_links > filteredData.links.length && (
                 <> · {data.meta.total_links} {t('graph.totalFiltered')}</>
               )}
             </span>
@@ -258,10 +320,10 @@ export default function GraphPage() {
           </div>
         )}
 
-        {/* État Success — le graphe */}
-        {data && !isLoading && (
+        {/* État Success — le graphe (reçoit les données filtrées) */}
+        {filteredData && !isLoading && (
           <SharesRootGraph
-            data={data}
+            data={filteredData}
             surahMap={surahMap}
             onNodeClick={handleNodeClick}
           />
