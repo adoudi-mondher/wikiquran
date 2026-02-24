@@ -1,13 +1,12 @@
-// Page principale du graphe — chef d'orchestre
-// Connecte : contrôles utilisateur → hook API → composant graphe
+// Page graphe — contrôles + visualisation SHARES_ROOT
+// Le header global est géré par AppLayout
 
 import { useState, useCallback } from 'react'
 import SharesRootGraph from '../components/graph/SharesRootGraph'
-import ThemeToggle from '../components/ThemeToggle'
 import { useAyahNetwork } from '../hooks/useNetwork'
 import { useSurahs } from '../hooks/useSurahs'
 import { GRAPH_DEFAULTS, GRAPH_LIMITS } from '../lib/constants'
-import { t, isRTL } from '../lib/i18n'
+import { t } from '../lib/i18n'
 
 /** Paramètres validés prêts pour l'API */
 interface SearchParams {
@@ -21,9 +20,6 @@ interface SearchParams {
 const LIMIT_MAX = 100
 
 export default function GraphPage() {
-  // --- Direction d'écriture (RTL pour l'arabe) ---
-  const dir = isRTL() ? 'rtl' : 'ltr'
-
   // --- Données de référence (chargées une seule fois) ---
   const { surahs, surahMap, isLoading: surahsLoading } = useSurahs()
 
@@ -91,16 +87,7 @@ export default function GraphPage() {
   const isLoading = graphLoading
 
   return (
-    <div dir={dir} className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
-      {/* --- Header --- */}
-      <header className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0
-                          flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-          {t('app.title')}
-        </h1>
-        <ThemeToggle />
-      </header>
-
+    <>
       {/* --- Barre de contrôles --- */}
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
         <div className="flex flex-wrap items-end gap-6">
@@ -254,6 +241,6 @@ export default function GraphPage() {
           />
         )}
       </main>
-    </div>
+    </>
   )
 }
