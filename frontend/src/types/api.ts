@@ -93,6 +93,24 @@ export interface RootInfo {
   total_ayahs: number
 }
 
+/** Entrée dans le comparatif mecquois/médinois */
+export interface PeriodRootEntry {
+  buckwalter: string
+  arabic: string
+  ayah_count: number
+}
+
+/** Réponse de GET /analytics/meccan-vs-medinan */
+export interface MeccanMedinanResponse {
+  meccan: PeriodRootEntry[]
+  medinan: PeriodRootEntry[]
+  meta: {
+    limit: number
+    meccan_ayahs: number
+    medinan_ayahs: number
+  }
+}
+
 /** Réponse de GET /network/root/{bw} — différente de GraphResponse */
 export interface RootNetworkResponse {
   root: RootInfo

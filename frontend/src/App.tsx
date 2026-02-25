@@ -2,22 +2,20 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
 import GraphPage from './pages/GraphPage'
+import DashboardPage from './pages/DashboardPage'
 
 function App() {
   return (
     <AppLayout>
       <Routes>
-        {/* MVP — le graphe est la page d'accueil */}
+        {/* Graphe interactif — exploration verset/racine */}
         <Route path="/graph" element={<GraphPage />} />
+
+        {/* Dashboard racines — vue macro analytique */}
+        <Route path="/dashboard" element={<DashboardPage />} />
 
         {/* Redirection par défaut vers le graphe */}
         <Route path="*" element={<Navigate to="/graph" replace />} />
-
-        {/* TODO Phase 4+ : ajouter les routes textuelles
-          <Route path="/surahs" element={<SurahListPage />} />
-          <Route path="/surah/:number" element={<SurahDetailPage />} />
-          <Route path="/search" element={<SearchPage />} />
-        */}
       </Routes>
     </AppLayout>
   )

@@ -3,7 +3,8 @@
 // Mode racine : tous les versets partageant une racine donnée
 // Le header global est géré par AppLayout
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import SharesRootGraph from '../components/graph/SharesRootGraph'
 import AyahPanel from '../components/graph/AyahPanel'
 import GraphLegend from '../components/graph/GraphLegend'
@@ -36,6 +37,9 @@ type SurahTypeFilter = 'all' | 'meccan' | 'medinan'
 const LIMIT_MAX = 100
 
 export default function GraphPage() {
+  // --- Lecture des params URL (deep linking depuis le dashboard) ---
+  const [urlParams, setUrlParams] = useSearchParams()
+
   // --- Données de référence ---
   const { surahs, surahMap, isLoading: surahsLoading } = useSurahs()
   const { roots, isLoading: rootsLoading } = useRoots()
@@ -53,6 +57,20 @@ export default function GraphPage() {
   // --- Contrôles mode racine ---
   const [selectedRootBw, setSelectedRootBw] = useState('')   // Buckwalter pour l'API
   const [activeRootBw, setActiveRootBw] = useState('')        // Buckwalter validé (après click Explorer)
+
+  // --- Deep linking : lire les params URL au montage ---
+  useEffect(() => {
+    const urlMode = urlParams.get('mode')
+    const urlRoot = urlParams.get('root')
+
+    if (urlMode === 'root' && urlRoot) {
+      setMode('root')
+      setSelectedRootBw(urlRoot)
+      setActiveRootBw(urlRoot)
+      // Nettoyer l'URL après lecture
+      setUrlParams({}, { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Filtres client (partagés entre les deux modes) ---
   const [typeFilter, setTypeFilter] = useState<SurahTypeFilter>('all')
@@ -406,7 +424,7 @@ export default function GraphPage() {
           {availableRoots.length > 0 && (
             <div className="flex flex-col gap-1">
               <label htmlFor="root-filter" className="text-xs text-gray-600 dark:text-gray-400">
-                {t('filter.root')}
+                {mode === 'root' ? t('filter.secondaryRoot') : t('filter.root')}
               </label>
               <select
                 id="root-filter"

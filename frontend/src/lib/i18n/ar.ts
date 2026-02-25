@@ -7,6 +7,8 @@ import type { Dictionary } from './index'
 const ar: Dictionary = {
   // --- Application ---
   'app.title': '🕌 ويكي قرآن — شبكة المعرفة',
+  'nav.graph': 'الشبكة',
+  'nav.dashboard': 'تحليل الجذور',
 
   // --- Contrôles (barre de recherche) ---
   'controls.surah': 'السورة',
@@ -28,6 +30,7 @@ const ar: Dictionary = {
   'filter.medinan': 'مدنية',
   'filter.allRoots': 'كل الجذور',
   'filter.root': 'الجذر',
+  'filter.secondaryRoot': 'جذر ثانوي',
 
   // --- Stats en temps réel ---
   'stats.surahs': 'سور',
@@ -60,6 +63,22 @@ const ar: Dictionary = {
   'common.error': 'خطأ',
   'common.unknownError': 'خطأ غير معروف',
   'common.ayah': 'آية',
+
+  // --- Dashboard racines ---
+  'dashboard.title': 'لوحة تحليل الجذور',
+  'dashboard.tab.all': 'الكل',
+  'dashboard.tab.meccan': 'مكّية',
+  'dashboard.tab.medinan': 'مدنية',
+  'dashboard.topRoots': 'أكثر الجذور شيوعاً',
+  'dashboard.distribution': 'توزيع الجذور',
+  'dashboard.distributionDesc': 'التوزيع حسب الترتيب — قانون زيف',
+  'dashboard.ayahs': 'آية',
+  'dashboard.occurrences': 'ورود',
+  'dashboard.rank': 'الترتيب',
+  'dashboard.frequency': 'التكرار',
+  'dashboard.exploreRoot': 'استكشاف في الشبكة',
+  'dashboard.meccanAyahs': 'آية مكّية',
+  'dashboard.medinanAyahs': 'آية مدنية',
 }
 
 export default ar

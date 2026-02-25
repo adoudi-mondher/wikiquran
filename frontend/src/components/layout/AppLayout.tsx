@@ -1,8 +1,8 @@
 // Layout principal — partagé par toutes les pages
-// Responsabilité : header global (titre + toggle thème) + slot contenu
-// Chaque page enfant gère son propre contenu dans {children}
+// Responsabilité : header global (titre + navigation + toggle thème) + slot contenu
 
 import type { ReactNode } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import ThemeToggle from '../ThemeToggle'
 import { t, isRTL } from '../../lib/i18n'
 
@@ -10,17 +10,47 @@ interface AppLayoutProps {
   children: ReactNode
 }
 
+/** Liens de navigation */
+const NAV_LINKS = [
+  { path: '/graph', label: 'nav.graph' },
+  { path: '/dashboard', label: 'nav.dashboard' },
+] as const
+
 export default function AppLayout({ children }: AppLayoutProps) {
   const dir = isRTL() ? 'rtl' : 'ltr'
+  const { pathname } = useLocation()
 
   return (
     <div dir={dir} className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
       {/* --- Header global --- */}
-      <header className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0
+      <header className="px-6 py-3 border-b border-gray-200 dark:border-gray-800 shrink-0
                           flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-          {t('app.title')}
-        </h1>
+        {/* Titre + navigation */}
+        <div className="flex items-center gap-6">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            {t('app.title')}
+          </h1>
+
+          <nav className="flex items-center gap-1">
+            {NAV_LINKS.map((link) => {
+              const isActive = pathname.startsWith(link.path)
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors
+                    ${isActive
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                >
+                  {t(link.label)}
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+
         <ThemeToggle />
       </header>
 
