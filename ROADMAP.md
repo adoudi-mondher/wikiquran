@@ -1,6 +1,6 @@
 # 🕌 WikiQuran — Roadmap détaillée
 
-> Suivi des tâches par phase — mis à jour en Février 2026
+> Suivi des tâches par phase — mis à jour le 25 février 2026
 
 ---
 
@@ -67,61 +67,80 @@
 - [x] `GET /surahs` — liste des 114 sourates
 - [x] `GET /surah/{number}` — détail sourate + ses versets
 - [x] `GET /ayah/{surah}/{verse}` — détail verset
-- [x] `GET /search?q=...` — recherche full-text arabe (normalisation diacritiques Uthmani)
-- [x] `GET /root/{buckwalter}` — détail racine + versets associés (pagination)
+- [x] `GET /search?q=...` — recherche full-text arabe (normalisation diacritiques)
+- [x] `GET /root/{buckwalter}` — détail racine + versets associés
 
 ### Endpoints Neo4j ✅
 - [x] `GET /network/ayah/{surah}/{verse}` — sous-graphe `SHARES_ROOT` d'un verset
-  - [x] Leviers A (min_roots) + B (limit), profondeur 1
-  - [x] Format react-force-graph : `{nodes, links, center, meta}`
-- [x] `GET /network/root/{buckwalter}` — sous-graphe des versets d'une racine
-  - [x] v1 : tri Mushaf (ordre Coran)
-  - [x] v2 : tri connectivité (versets les plus connectés entre eux)
-  - [x] Paramètre `?sort=mushaf|connected`
-- [x] `GET /analytics/top-roots` — racines classées par nombre de versets distincts
-- [x] `GET /analytics/meccan-vs-medinan` — comparaison vocabulaire par période de révélation
+- [x] `GET /network/root/{buckwalter}` — tous les versets d'une racine (sort mushaf/connected)
+- [x] `GET /analytics/top-roots` — racines les plus fréquentes (limit max 100)
+- [x] `GET /analytics/meccan-vs-medinan` — comparaison analytique par période
 
 ### Qualité ✅
 - [x] Schemas Pydantic pour chaque endpoint
-- [x] Gestion des erreurs (404, 422) — validation déclarative via FastAPI Query
+- [x] Gestion des erreurs (404, 422, 500)
 - [x] Documentation Swagger auto-générée (`/docs`)
-- [x] Tests manuels edge cases (6/6 passés)
-- [x] Fix SAWarning back_populates Ayah ↔ WordOccurrence
+- [ ] Tests endpoints basiques (reporté)
 
-### Notes Phase 3
-- Architecture SOLID : routes (HTTP) / services (logique) / schemas (contrats)
-- Approche B pour les défauts : valeurs par défaut uniquement dans les routes
-- Design A pour SHARES_ROOT : une relation par racine partagée (granularité maximale)
-- Performance `sort=connected` : ~4.6s pour racines fréquentes (optimisation prévue Phase 5)
-- 9 endpoints au total : 5 PostgreSQL + 4 Neo4j
+### Architecture backend
+- SOLID : routes / services / schemas séparés
+- "Fail fast" : erreur au démarrage si variables manquantes
+- Algorithme v2 connectivity-based sorting pour `/network/root/`
 
 ---
 
-## ⏳ Phase 4 — Frontend `À VENIR`
+## 🔄 Phase 4 — Frontend `EN COURS`
 
-- [ ] Setup React + Vite + TailwindCSS + TypeScript
-- [ ] Support RTL natif (arabe)
-- [ ] Page liste / recherche sourates
-- [ ] Page détail verset (texte arabe + métadonnées)
-- [ ] Page racine (liste des versets liés)
-- [ ] Page graphe interactif (`react-force-graph` / ForceGraph2D)
-  - [ ] Visualisation `SHARES_ROOT`
-  - [ ] Filtres par type (mecquois/médinois)
-  - [ ] Filtres par racine
-  - [ ] Click sur nœud → détail verset
+### Setup ✅
+- [x] React 19 + Vite + TailwindCSS v4 + TypeScript
+- [x] Support RTL natif (arabe)
+- [x] Système i18n (`lib/i18n/ar.ts`)
+- [x] Thème light/dark (ThemeProvider + ThemeToggle)
+- [x] Client API centralisé (`api/client.ts` + proxy Vite)
+- [x] TanStack Query (React Query v5) pour le cache
+
+### Graphe interactif ✅
+- [x] `SharesRootGraph` — ForceGraph2D (WebGL)
+- [x] Mode verset : sous-graphe autour d'un verset
+- [x] Mode racine : versets partageant une racine (sort=connected)
+- [x] Toggle mode آية / جذر
+- [x] Select racine (top 100 racines)
+- [x] Filtres client : mecquois/médinois + racine secondaire
+- [x] AyahPanel — panneau latéral au click sur nœud
+- [x] GraphLegend — légende dynamique avec couleurs par sourate
+- [x] GraphStats — stats en temps réel (sourates, ratio, top racine)
+- [x] Bandeau racine active (mode racine)
+- [x] Opacité adaptative des liens (densité → transparence)
+- [x] Deep linking URL params (`?mode=root&root=ktb`)
+
+### Dashboard analytique ✅
+- [x] Page `/dashboard` — DashboardPage
+- [x] Onglets الكل / مكّية / مدنية
+- [x] Top 20 racines (barres horizontales cliquables)
+- [x] Distribution Zipf (recharts AreaChart)
+- [x] Click racine → deep link vers graphe mode racine
+
+### Navigation ✅
+- [x] AppLayout avec liens الشبكة / تحليل الجذور
+- [x] Routes : `/graph` + `/dashboard`
+
+### Restant ⏳
+- [ ] Surbrillance racine dans le texte du verset (nécessite endpoint `/ayah/{s}/{v}/words`)
+- [ ] Recherche full-text arabe (page ou composant)
+- [ ] Polish UX (responsive, animations, feedback utilisateur)
 
 ---
 
-## ⏳ Phase 5 — Déploiement VPS OVH `À VENIR`
+## ⏳ Phase 5 — Déploiement VPS OVH `PROCHAINE ÉTAPE`
 
 - [ ] Configuration VPS OVH (Ubuntu + Docker)
 - [ ] `Dockerfile` backend FastAPI
+- [ ] Build frontend (Vite) + assets statiques
 - [ ] `docker-compose.prod.yml` (PostgreSQL + Neo4j + Backend + Nginx)
-- [ ] Configuration Nginx (reverse proxy)
+- [ ] Configuration Nginx (reverse proxy + assets frontend)
 - [ ] Certificat SSL (Let's Encrypt)
 - [ ] Alembic — migrations PostgreSQL
 - [ ] CI/CD GitHub Actions → déploiement automatique
-- [ ] Frontend → Vercel (ou VPS)
 - [ ] Monitoring basique (logs + healthchecks)
 
 ---
@@ -131,11 +150,15 @@
 - [ ] Personnages & Prophètes (`Person`, `CO_MENTIONED`)
   - [ ] Extraction depuis corpus.quran.com (tag `PN`)
   - [ ] Import PostgreSQL + Neo4j
+  - [ ] Person × Root : vocabulaire autour de chaque prophète
+  - [ ] Person × meccan/medinan : évolution narrative
+  - [ ] Réseau de co-mentions
 - [ ] Thèmes & Concepts (`Theme`, `HAS_THEME`)
-  - [ ] Évaluation ontologie corpus.quran.com
-  - [ ] ou enrichissement via LLM (à décider)
+  - [ ] Clustering automatique par densité de racines (data-driven, pas de labels humains)
 - [ ] Table `morpheme` (préfixes/suffixes ignorés en Phase 1)
+- [ ] Surbrillance racine dans le texte (endpoint `/ayah/{s}/{v}/words`)
 - [ ] API publique documentée et versionnée
+- [ ] Support multilingue (français, anglais)
 
 ---
 
@@ -154,11 +177,8 @@
 | Déploiement | VPS OVH (nginx + docker-compose) |
 | Versioning deps | `venv` + `pip` + `requirements.txt` |
 | Interpréteur VSCode | `.venv\Scripts\python.exe` (Pylance) |
-| SHARES_ROOT Design | Design A — une relation par racine (granularité maximale) |
-| Défauts Query params | Approche B — défauts uniquement dans les routes |
-| Format graphe API | react-force-graph : `{nodes, links}` avec `group` = surah_number |
-| Performance SHARES_ROOT | Leviers A (min_roots) + B (limit), profondeur 1 |
-| Architecture backend | SOLID : routes / services / schemas (3 couches) |
+| Docker backend local | Non — Dockerfile créé au déploiement |
+| Tri mode racine | `sort=connected` par défaut |
 
 ---
 
@@ -178,6 +198,6 @@
 
 ---
 
-**Dernière mise à jour :** Février 2026
-**Statut :** ✅ Phase 1, 2 & 3 terminées — ⏳ Phase 4 Frontend à venir
+**Dernière mise à jour :** 25 février 2026
+**Statut :** ✅ Phases 1, 2, 3 terminées — 🔄 Phase 4 Frontend en cours — Phase 5 Déploiement prochaine étape
 **Version :** 0.4.0
