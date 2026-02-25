@@ -207,6 +207,7 @@ export default function DashboardPage() {
                   }}
                 />
                 <YAxis
+                  tickMargin={30}
                   tick={{ fontSize: 11, fill: isDark ? '#9ca3af' : '#6b7280' }}
                   axisLine={{ stroke: isDark ? '#374151' : '#e5e7eb' }}
                   tickLine={false}
@@ -226,11 +227,13 @@ export default function DashboardPage() {
                     fontSize: 12,
                     direction: 'rtl',
                   }}
-                  formatter={(value: number, _name: string, props: { payload: { arabic: string } }) => [
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  formatter={(value: any, _name: any, props: any) => [
                     `${value} ${t('dashboard.ayahs')}`,
-                    props.payload.arabic,
+                    props?.payload?.arabic ?? '',
                   ]}
-                  labelFormatter={(rank: number) => `#${rank}`}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  labelFormatter={(rank: any) => `#${rank}`}
                 />
                 <Area
                   type="monotone"

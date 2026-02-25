@@ -89,7 +89,7 @@
 
 ---
 
-## 🔄 Phase 4 — Frontend `EN COURS`
+## ✅ Phase 4 — Frontend `TERMINÉE`
 
 ### Setup ✅
 - [x] React 19 + Vite + TailwindCSS v4 + TypeScript
@@ -120,11 +120,13 @@
 - [x] Distribution Zipf (recharts AreaChart)
 - [x] Click racine → deep link vers graphe mode racine
 
-### Navigation ✅
+### Navigation & UX ✅
 - [x] AppLayout avec liens الشبكة / تحليل الجذور
 - [x] Routes : `/graph` + `/dashboard`
+- [x] Guide d'utilisation (GuideModal) — auto premier visit + bouton ؟
+- [x] Tooltips liens enrichis (16px bold)
 
-### Restant ⏳
+### Restant (reporté Phase 6) ⏭️
 - [ ] Surbrillance racine dans le texte du verset (nécessite endpoint `/ayah/{s}/{v}/words`)
 - [ ] Recherche full-text arabe (page ou composant)
 - [ ] Polish UX (responsive, animations, feedback utilisateur)
@@ -133,7 +135,7 @@
 
 ## ⏳ Phase 5 — Déploiement VPS OVH `PROCHAINE ÉTAPE`
 
-- [ ] Configuration VPS OVH (Ubuntu + Docker)
+- [ ] Configuration VPS OVH (Debian + Docker)
 - [ ] `Dockerfile` backend FastAPI
 - [ ] Build frontend (Vite) + assets statiques
 - [ ] `docker-compose.prod.yml` (PostgreSQL + Neo4j + Backend + Nginx)
@@ -174,7 +176,7 @@
 | Pont PG ↔ Neo4j | `pg_id` sur chaque nœud Neo4j |
 | SHARES_ROOT | Calculé en SQL, importé en batch dans Neo4j |
 | Migrations | Pas d'Alembic en Phase 2-4 — ajout en Phase 5 |
-| Déploiement | VPS OVH (nginx + docker-compose) |
+| Déploiement | VPS OVH Debian (nginx + docker-compose) |
 | Versioning deps | `venv` + `pip` + `requirements.txt` |
 | Interpréteur VSCode | `.venv\Scripts\python.exe` (Pylance) |
 | Docker backend local | Non — Dockerfile créé au déploiement |
@@ -199,5 +201,5 @@
 ---
 
 **Dernière mise à jour :** 25 février 2026
-**Statut :** ✅ Phases 1, 2, 3 terminées — 🔄 Phase 4 Frontend en cours — Phase 5 Déploiement prochaine étape
+**Statut :** ✅ Phases 1, 2, 3, 4 terminées — ⏳ Phase 5 Déploiement prochaine étape
 **Version :** 0.4.0

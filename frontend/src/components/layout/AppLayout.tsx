@@ -4,6 +4,7 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import ThemeToggle from '../ThemeToggle'
+import GuideModal, { useGuide } from './GuideModal'
 import { t, isRTL } from '../../lib/i18n'
 
 interface AppLayoutProps {
@@ -19,6 +20,7 @@ const NAV_LINKS = [
 export default function AppLayout({ children }: AppLayoutProps) {
   const dir = isRTL() ? 'rtl' : 'ltr'
   const { pathname } = useLocation()
+  const [guideOpen, openGuide, closeGuide] = useGuide()
 
   return (
     <div dir={dir} className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
@@ -51,11 +53,27 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </nav>
         </div>
 
-        <ThemeToggle />
+        {/* Actions header */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={openGuide}
+            className="w-9 h-9 flex items-center justify-center rounded-full
+                      bg-blue-600 text-white text-base font-bold
+                      hover:bg-blue-500
+                      transition-colors cursor-pointer"
+            title={t('guide.title')}
+          >
+            ؟
+          </button>
+          <ThemeToggle />
+        </div>
       </header>
 
       {/* --- Contenu de la page --- */}
       {children}
+
+      {/* --- Modal guide --- */}
+      <GuideModal isOpen={guideOpen} onClose={closeGuide} />
     </div>
   )
 }

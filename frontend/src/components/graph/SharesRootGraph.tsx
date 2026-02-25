@@ -128,7 +128,7 @@ export default function SharesRootGraph({ data, surahMap, onNodeClick }: SharesR
   const linkTooltip = useCallback((link: FGLink): string => {
     const roots = (link as GraphLink).roots_ar
     const weight = (link as GraphLink).weight
-    return `${roots.join('، ')} (${weight} ${t('graph.rootCount')})`
+    return `<span style="font-size:16px;font-weight:bold">${roots.join('، ')} (${weight} ${t('graph.rootCount')})</span>`
   }, [])
 
   // --- Épaisseur des liens proportionnelle au poids ---
