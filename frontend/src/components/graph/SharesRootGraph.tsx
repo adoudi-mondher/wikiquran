@@ -17,7 +17,7 @@ interface FGNode extends GraphNode {
   y?: number
 }
 
-interface FGLink extends GraphLink {
+interface FGLink extends Omit<GraphLink, 'source' | 'target'> {
   source: FGNode | string
   target: FGNode | string
 }
