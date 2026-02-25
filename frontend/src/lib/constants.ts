@@ -3,7 +3,7 @@
 /** Valeurs par défaut des filtres graphe (miroir du backend) */
 export const GRAPH_DEFAULTS = {
   minRoots: 2,
-  limit: 50,
+  limit: 10,
   maxNodes: 30,
   sort: 'mushaf' as const,
 } as const

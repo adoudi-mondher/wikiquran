@@ -136,10 +136,21 @@ export default function SharesRootGraph({ data, surahMap, onNodeClick }: SharesR
     return LINK_BASE_WIDTH + (link as GraphLink).weight * LINK_WEIGHT_SCALE
   }, [])
 
-  // --- Couleur des liens — adaptée au thème ---
+  // --- Opacité adaptative selon la densité du graphe ---
+  const linkOpacity = useMemo((): number => {
+    const count = data.links.length
+    if (count > 100) return 0.05
+    if (count > 50) return 0.08
+    if (count > 20) return 0.15
+    return 0.25
+  }, [data.links.length])
+
+  // --- Couleur des liens — adaptée au thème + densité ---
   const linkColor = useCallback((): string => {
-    return colors.linkColor
-  }, [colors])
+    return theme === 'dark'
+      ? `rgba(255, 255, 255, ${linkOpacity})`
+      : `rgba(0, 0, 0, ${linkOpacity})`
+  }, [theme, linkOpacity])
 
   // --- Click sur un nœud ---
   const handleNodeClick = useCallback((node: FGNode) => {
