@@ -12,7 +12,6 @@ import GraphStats from '../components/graph/GraphStats'
 import { useAyahNetwork, useRootNetwork } from '../hooks/useNetwork'
 import { useSurahs } from '../hooks/useSurahs'
 import { useRoots } from '../hooks/useRoots'
-import { GRAPH_DEFAULTS, GRAPH_LIMITS } from '../lib/constants'
 import { t } from '../lib/i18n'
 import type { GraphResponse } from '../types/api'
 
@@ -339,8 +338,6 @@ export default function GraphPage() {
                 <input
                   id="min-roots"
                   type="range"
-                  min={GRAPH_LIMITS.minRoots.min}
-                  max={GRAPH_LIMITS.minRoots.max}
                   value={minRoots}
                   onChange={(e) => setMinRoots(parseInt(e.target.value, 10))}
                   className="w-32 accent-blue-500"
