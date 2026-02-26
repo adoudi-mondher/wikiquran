@@ -50,8 +50,8 @@ export default function GraphPage() {
   // --- Contrôles mode verset ---
   const [selectedSurah, setSelectedSurah] = useState(2)
   const [selectedAyah, setSelectedAyah] = useState(255)
-  const [minRoots, setMinRoots] = useState(GRAPH_DEFAULTS.minRoots)
-  const [limit, setLimit] = useState(GRAPH_DEFAULTS.limit)
+  const [minRoots, setMinRoots] = useState(2)
+  const [limit, setLimit] = useState(10)
   const [verseSearchParams, setVerseSearchParams] = useState<VerseSearchParams | null>(null)
 
   // --- Contrôles mode racine ---
@@ -531,7 +531,6 @@ export default function GraphPage() {
             <GraphLegend
               nodes={filteredData.nodes}
               surahMap={surahMap}
-              panelOpen={!!selectedNode}
             />
           </>
         )}
