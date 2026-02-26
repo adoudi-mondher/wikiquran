@@ -1,0 +1,125 @@
+# =============================================================================
+# WikiQuran — docker-compose.prod.yml
+# Chemin cible sur le VPS : /opt/docker/wikiquran/docker-compose.prod.yml
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL — source de vérité (ACID master)
+  # Réseau : interne uniquement, jamais exposé à NPM
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: wikiquran-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Neo4j — moteur graphe (BASE dérivé)
+  # Réseau : interne uniquement, jamais exposé à NPM
+  # ---------------------------------------------------------------------------
+  neo4j:
+    image: neo4j:5.26.21-community
+    container_name: wikiquran-neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER}/${NEO4J_PASSWORD}
+      NEO4J_PLUGINS: '[]'
+      # Mémoire optimisée pour VPS 8Go RAM (4 vCores OVH VPS-1)
+      NEO4J_server_memory_heap_initial__size: 1g
+      NEO4J_server_memory_heap_max__size: 2g
+      NEO4J_server_memory_pagecache__size: 1g
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USER} -p ${NEO4J_PASSWORD} 'RETURN 1' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Backend FastAPI — pont entre NPM et les bases de données
+  # Réseau : proxy (visible par NPM) + internal (accès BDD)
+  # ---------------------------------------------------------------------------
+  backend:
+    image: wikiquran-backend:latest
+    container_name: wikiquran-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - proxy
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # Frontend nginx:alpine — sert le build statique Vite
+  # Réseau : proxy (visible par NPM)
+  # ---------------------------------------------------------------------------
+  frontend:
+    image: nginx:alpine
+    container_name: wikiquran-frontend
+    restart: unless-stopped
+    volumes:
+      # Build Vite copié lors du déploiement
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      # Config nginx pour le routing SPA (React Router)
+      - ./nginx.frontend.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - proxy
+    depends_on:
+      - backend
+
+# =============================================================================
+# Réseaux
+# =============================================================================
+networks:
+
+  # Réseau NPM existant — WikiQuran s'y connecte sans le recréer
+  proxy:
+    external: true
+    name: n8n_proxy-network
+
+  # Réseau privé WikiQuran — BDD jamais exposées
+  internal:
+    driver: bridge
+    name: wikiquran-internal
+
+# =============================================================================
+# Volumes persistants
+# =============================================================================
+volumes:
+  postgres_data:
+    name: wikiquran-postgres-data
+  neo4j_data:
+    name: wikiquran-neo4j-data
+  neo4j_logs:
+    name: wikiquran-neo4j-logs

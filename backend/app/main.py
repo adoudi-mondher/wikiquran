@@ -34,10 +34,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — autorise le frontend React (dev)
+# CORS — origines chargées depuis .env (dev et prod)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Port par défaut de Vite
+    allow_origins=settings.cors_origins_list,
     allow_methods=["GET"],
     allow_headers=["*"],
 )
@@ -51,9 +51,9 @@ app.include_router(network.router)
 app.include_router(analytics.router)
 
 # ─── Healthcheck ───────────────────────────────────────────
-@app.get("/", tags=["Health"])
-def root():
-    """Vérifie que l'API est en ligne."""
+@app.get("/health", tags=["Health"])
+def health():
+    """Vérifie que l'API est en ligne — utilisé par Docker healthcheck."""
     return {
         "status": "ok",
         "version": settings.APP_VERSION,

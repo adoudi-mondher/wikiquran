@@ -1,7 +1,8 @@
 // Client HTTP centralisé — toutes les requêtes passent par ici
-// En dev, le proxy Vite redirige /api/* → http://localhost:8000/*
+// En dev  : VITE_API_URL non défini → proxy Vite /api → http://localhost:8000
+// En prod : VITE_API_URL=https://api.quranicdata.org → appel direct
 
-const API_BASE = '/api'
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
 
 /**
  * Fetch typé avec gestion d'erreur centralisée
