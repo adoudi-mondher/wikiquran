@@ -22,11 +22,11 @@ load_dotenv()
 # Configuration
 # ============================================================
 PG_CONFIG = {
-    "host"    : os.getenv("DB_HOST", "localhost"),
-    "port"    : os.getenv("DB_PORT", "5432"),
-    "dbname"  : os.getenv("DB_NAME", "wikiquran"),
-    "user"    : os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("DB_PASSWORD"),
+    "host"    : os.getenv("POSTGRES_HOST", "localhost"),
+    "port"    : os.getenv("POSTGRES_PORT", "5432"),
+    "dbname"  : os.getenv("POSTGRES_DB", "wikiquran"),
+    "user"    : os.getenv("POSTGRES_USER", "postgres"),
+    "password": os.getenv("POSTGRES_PASSWORD"),
 }
 
 NEO4J_URI      = os.getenv("NEO4J_URI", "bolt://localhost:7687")
