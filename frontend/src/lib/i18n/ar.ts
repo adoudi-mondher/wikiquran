@@ -6,7 +6,7 @@ import type { Dictionary } from './index'
 
 const ar: Dictionary = {
   // --- Application ---
-  'app.title': '🕌 ويكي قرآن — شبكة المعرفة',
+  'app.title': 'قرآن · شبكة المعرفة',
   'nav.graph': 'الشبكة',
   'nav.dashboard': 'تحليل الجذور',
   'nav.guide': '؟',

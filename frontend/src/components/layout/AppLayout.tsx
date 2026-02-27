@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import ThemeToggle from '../ThemeToggle'
 import GuideModal, { useGuide } from './GuideModal'
+import { AppFooter } from "@/components/AppFooter"
 import { t, isRTL } from '../../lib/i18n'
 
 interface AppLayoutProps {
@@ -29,9 +30,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
                           flex items-center justify-between">
         {/* Titre + navigation */}
         <div className="flex items-center gap-6">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          <Link
+            to="/graph"
+            className="text-xl font-semibold text-gray-900 dark:text-gray-100
+                       hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
             {t('app.title')}
-          </h1>
+          </Link>
 
           <nav className="flex items-center gap-1">
             {NAV_LINKS.map((link) => {
@@ -69,8 +74,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
       </header>
 
-      {/* --- Contenu de la page --- */}
-      {children}
+      {/* --- Contenu de la page (flex-1 min-h-0 pour contenir les enfants sans écraser le footer) --- */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {children}
+      </div>
+
+      {/* --- Pied de page global --- */}
+      <AppFooter />
 
       {/* --- Modal guide --- */}
       <GuideModal isOpen={guideOpen} onClose={closeGuide} />

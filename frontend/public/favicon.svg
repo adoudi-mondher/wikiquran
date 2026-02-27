@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Fond cercle bleu app -->
+  <circle cx="32" cy="32" r="32" fill="#2563eb"/>
+  <!-- Lettre ن centrée -->
+  <text
+    x="32"
+    y="47"
+    text-anchor="middle"
+    font-family="Amiri, 'Traditional Arabic', serif"
+    font-size="52"
+    font-weight="700"
+    fill="#ffffff"
+  >ن</text>
+</svg>
