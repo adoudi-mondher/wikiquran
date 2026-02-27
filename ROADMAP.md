@@ -1,6 +1,6 @@
 # 🕌 WikiQuran — Roadmap détaillée
 
-> Suivi des tâches par phase — mis à jour le 25 février 2026
+> Suivi des tâches par phase — mis à jour le 27 février 2026
 
 ---
 
@@ -50,7 +50,7 @@
 ### Notes Phase 2
 - 3 mots orphelins sans occurrence ignorés (artefacts parser, sans impact analytique)
 - `SHARES_ROOT` calculé en SQL puis importé dans Neo4j (plus performant)
-- Pas d'Alembic — ajout prévu en Phase 5 (prod)
+- Pas d'Alembic — ajout prévu en Phase 6
 
 ---
 
@@ -80,7 +80,7 @@
 - [x] Schemas Pydantic pour chaque endpoint
 - [x] Gestion des erreurs (404, 422, 500)
 - [x] Documentation Swagger auto-générée (`/docs`)
-- [ ] Tests endpoints basiques (reporté)
+- [ ] Tests endpoints basiques (reporté Phase 6)
 
 ### Architecture backend
 - SOLID : routes / services / schemas séparés
@@ -133,22 +133,64 @@
 
 ---
 
-## ⏳ Phase 5 — Déploiement VPS OVH `PROCHAINE ÉTAPE`
+## ✅ Phase 5 — Déploiement VPS OVH `TERMINÉE`
 
-- [ ] Configuration VPS OVH (Debian + Docker)
-- [ ] `Dockerfile` backend FastAPI
-- [ ] Build frontend (Vite) + assets statiques
-- [ ] `docker-compose.prod.yml` (PostgreSQL + Neo4j + Backend + Nginx)
-- [ ] Configuration Nginx (reverse proxy + assets frontend)
-- [ ] Certificat SSL (Let's Encrypt)
-- [ ] Alembic — migrations PostgreSQL
-- [ ] CI/CD GitHub Actions → déploiement automatique
+### Infrastructure ✅
+- [x] VPS OVH Debian — user non-root + Docker + Compose v2 + UFW
+- [x] Swap 4Go configuré (nécessaire pour import Neo4j 6M relations)
+- [x] Structure projet : `/opt/docker/wikiquran/`
+- [x] Clone GitHub via HTTPS
+
+### Fichiers de déploiement ✅
+- [x] `Dockerfile` backend FastAPI (Python 3.12-slim, 2 workers uvicorn)
+- [x] `docker-compose.prod.yml` (PG + Neo4j + Backend + Frontend nginx)
+- [x] `nginx.frontend.conf` (SPA routing + gzip + cache assets Vite)
+- [x] `.env.prod.example` — template variables (commité)
+- [x] `frontend/.env.production` — `VITE_API_URL=https://api.quranicdata.org`
+
+### Backend ✅
+- [x] `config.py` — `CORS_ORIGINS` dynamique depuis `.env`
+- [x] `main.py` — endpoint `/health` + CORS depuis settings
+- [x] `client.ts` — `VITE_API_URL` avec fallback `/api` dev
+- [x] `requirements.txt` déplacé dans `backend/`
+- [x] Scripts import alignés sur variables `POSTGRES_*`
+
+### Domaine & SSL ✅
+- [x] Domaine `quranicdata.org` acheté sur Infomaniak
+- [x] DNS A Records configurés (`@`, `www`, `api`)
+- [x] Nginx Proxy Manager — Proxy Host `quranicdata.org` + SSL Let's Encrypt
+- [x] Nginx Proxy Manager — Proxy Host `api.quranicdata.org` + SSL Let's Encrypt
+- [x] `www.quranicdata.org` → redirect vers `quranicdata.org`
+
+### Import données ✅
+- [x] Schéma PostgreSQL créé via `schema_postgresql.sql`
+- [x] Import PostgreSQL — 114 sourates | 6 236 versets | 77 429 occurrences
+- [x] Import Neo4j — 6 035 766 relations SHARES_ROOT
+
+### Notes Phase 5
+- Réseau Docker NPM : `n8n_proxy-network` (héritage install n8n)
+- Mot de passe Neo4j : hex uniquement (éviter `/` dans `NEO4J_AUTH`)
+- Swap indispensable pour calcul SHARES_ROOT (OOM Killer sans swap)
+- `nohup docker exec` pour import long sans risque de déconnexion SSH
+- `APP_ENV` injecté via `env_file` dans docker-compose (pas `docker cp`)
+
+### Restant (reporté) ⏭️
+- [ ] Alembic — migrations PostgreSQL (avant Phase 6)
+- [ ] `deploy.sh` — script de déploiement simplifié
+- [ ] CI/CD GitHub Actions (Phase 6+)
+- [ ] Audit sécurité (session dédiée)
 - [ ] Monitoring basique (logs + healthchecks)
 
 ---
 
-## 🔮 Phase 6 — Enrichissement `FUTUR`
+## ⏳ Phase 6 — Enrichissement `PROCHAINE ÉTAPE`
 
+### Frontend (améliorations) ⏭️
+- [ ] Polish UX (responsive mobile, animations, feedback utilisateur)
+- [ ] Surbrillance racine dans le texte du verset (endpoint `/ayah/{s}/{v}/words`)
+- [ ] Recherche full-text arabe (page ou composant)
+
+### Données & Backend ⏭️
 - [ ] Personnages & Prophètes (`Person`, `CO_MENTIONED`)
   - [ ] Extraction depuis corpus.quran.com (tag `PN`)
   - [ ] Import PostgreSQL + Neo4j
@@ -156,9 +198,16 @@
   - [ ] Person × meccan/medinan : évolution narrative
   - [ ] Réseau de co-mentions
 - [ ] Thèmes & Concepts (`Theme`, `HAS_THEME`)
-  - [ ] Clustering automatique par densité de racines (data-driven, pas de labels humains)
+  - [ ] Clustering automatique par densité de racines (data-driven)
 - [ ] Table `morpheme` (préfixes/suffixes ignorés en Phase 1)
-- [ ] Surbrillance racine dans le texte (endpoint `/ayah/{s}/{v}/words`)
+- [ ] Alembic — migrations PostgreSQL
+- [ ] Tests endpoints basiques
+
+### Infrastructure ⏭️
+- [ ] `deploy.sh` — script de déploiement simplifié
+- [ ] CI/CD GitHub Actions
+- [ ] Audit sécurité complet
+- [ ] Monitoring basique (logs + healthchecks)
 - [ ] API publique documentée et versionnée
 - [ ] Support multilingue (français, anglais)
 
@@ -175,16 +224,21 @@
 | Neo4j | Dérivé BASE — reconstruit depuis PostgreSQL |
 | Pont PG ↔ Neo4j | `pg_id` sur chaque nœud Neo4j |
 | SHARES_ROOT | Calculé en SQL, importé en batch dans Neo4j |
-| Migrations | Pas d'Alembic en Phase 2-4 — ajout en Phase 5 |
-| Déploiement | VPS OVH Debian (nginx + docker-compose) |
+| Migrations | Alembic reporté en Phase 6 |
+| Déploiement | VPS OVH Debian — Nginx Proxy Manager existant |
+| Réseau Docker NPM | `n8n_proxy-network` (existant, partagé) |
+| Réseau Docker WikiQuran | `wikiquran-internal` (isolé, BDD jamais exposées) |
+| Frontend prod | nginx:alpine servant build Vite statique |
 | Versioning deps | `venv` + `pip` + `requirements.txt` |
 | Interpréteur VSCode | `.venv\Scripts\python.exe` (Pylance) |
 | Docker backend local | Non — Dockerfile créé au déploiement |
 | Tri mode racine | `sort=connected` par défaut |
+| Node.js VPS | v22 LTS (build frontend uniquement) |
+| Swap VPS | 4Go (nécessaire import Neo4j) |
 
 ---
 
-## 📊 Stats finales Phase 2
+## 📊 Stats finales
 
 | Élément | PostgreSQL | Neo4j |
 |---------|-----------|-------|
@@ -200,6 +254,7 @@
 
 ---
 
-**Dernière mise à jour :** 25 février 2026
-**Statut :** ✅ Phases 1, 2, 3, 4 terminées — ⏳ Phase 5 Déploiement prochaine étape
+**Dernière mise à jour :** 27 février 2026
+**Statut :** ✅ Phases 1, 2, 3, 4, 5 terminées — ⏳ Phase 6 Enrichissement prochaine étape
 **Version :** 0.4.0
+**URL prod :** https://quranicdata.org
