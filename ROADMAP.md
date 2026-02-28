@@ -1,4 +1,4 @@
-# 🕌 WikiQuran — Roadmap détaillée
+# Coran · Réseau de Connaissance — Roadmap détaillée
 
 > Suivi des tâches par phase — mis à jour le 28 février 2026
 

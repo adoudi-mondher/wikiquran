@@ -1,72 +1,82 @@
-# 🕌 WikiQuran — Knowledge Graph du Coran
+# Quran · Knowledge Graph
 
-> Dataset analytique du Coran, visualisé comme un graphe vivant, 100% data-driven, zéro interprétation religieuse.
+> An analytical dataset of the Quran, visualized as a living knowledge graph — 100% data-driven, zero religious interpretation.
 
-**🌐 Production :** [quranicdata.org](https://quranicdata.org)
-
----
-
-## 🎯 Vision & Positionnement
-
-WikiQuran n'est **pas** un Quran viewer. C'est le premier outil qui traite le Coran comme un **dataset analytique** et le visualise comme un **graphe vivant** — sans interprétation religieuse, uniquement les patterns que les données révèlent.
-
-### Ce que le graphe révèle
-- **Structure sémantique cachée** — racines arabes comme réseau neuronal du Coran
-- **Évolution narrative** — différences linguistiques entre sourates mecquoises et médinoises
-- **Patterns structurels** — répétitions, connexions et clusters thématiques data-driven
-
-### Principes non négociables
-- ✅ **Scalable** — chaque décision technique permet d'évoluer
-- ✅ **Neutre** — les insights émergent des données, pas des auteurs
-- ✅ **Analytique** — le Coran traité comme n'importe quel corpus linguistique
+**🌐 Production:** [quranicdata.org](https://quranicdata.org)
 
 ---
 
-## 📊 La donnée
+<div align="center">
 
-**Sources :** [tanzil.net](https://tanzil.net/download) / [corpus.quran.com](https://corpus.quran.com/download/default.jsp) *(données libres)*
+[العربية](./README.md) · [English](./README.en.md) · [Français](./README.fr.md)
 
-| Élément | Volume |
-|--------|--------|
-| Sourates | 114 |
-| Versets (Ayat) | 6 236 |
-| Mots uniques | 12 113 |
-| Racines arabes | 1 642 |
-| Occurrences | 77 429 |
-| Relations SHARES_ROOT | 6 035 766 |
-
-### Stratégie d'extraction
-
-| Source | Fichier | Contenu |
-|--------|---------|---------|
-| tanzil.net | `quran-uthmani.xml` | Texte arabe (orthographe Uthmani) |
-| tanzil.net | `quran-data.xml` | Métadonnées : ordre révélation, type sourate, juz, hizb |
-| corpus.quran.com | `morphology.txt` (TSV) | Racines + morphologie mot par mot |
+</div>
 
 ---
 
-## 🏛️ Architecture des données
+## Vision & Positioning
 
-### Principe fondamental
+WikiQuran is **not** a Quran viewer. It is the first tool that treats the Quran as an **analytical dataset** and visualizes it as a **living graph** — without religious interpretation, only the patterns the data reveals.
 
-> **PostgreSQL est le master. Neo4j est un index graphe dérivé.**
+### What the graph reveals
 
-- On n'écrit **jamais** directement dans Neo4j sans passer par PostgreSQL
-- Si Neo4j est corrompu → reconstruction complète depuis PostgreSQL
-- Chaque nœud Neo4j contient un `pg_id` → pont vers la source de vérité
+- **Hidden semantic structure** — Arabic roots as the neural network of the Quran
+- **Narrative evolution** — linguistic differences between Meccan and Medinan surahs
+- **Structural patterns** — repetitions, connections and data-driven thematic clusters
 
-### Frontière ACID / BASE
+### Non-negotiable principles
+
+- ✅ **Scalable** — every technical decision allows future growth
+- ✅ **Neutral** — insights emerge from data, not from authors
+- ✅ **Analytical** — the Quran treated like any linguistic corpus
+
+---
+
+## The Data
+
+**Sources:** [tanzil.net](https://tanzil.net/download) / [corpus.quran.com](https://corpus.quran.com/download/default.jsp) *(open data)*
+
+| Element | Volume |
+|---------|--------|
+| Surahs | 114 |
+| Verses (Ayat) | 6,236 |
+| Unique words | 12,113 |
+| Arabic roots | 1,642 |
+| Occurrences | 77,429 |
+| SHARES_ROOT relationships | 6,035,766 |
+
+### Extraction strategy
+
+| Source | File | Content |
+|--------|------|---------|
+| tanzil.net | `quran-uthmani.xml` | Arabic text (Uthmani script) |
+| tanzil.net | `quran-data.xml` | Metadata: revelation order, surah type, juz, hizb |
+| corpus.quran.com | `morphology.txt` (TSV) | Roots + morphology word by word |
+
+---
+
+## Data Architecture
+
+### Core principle
+
+> **PostgreSQL is the master. Neo4j is a derived graph index.**
+
+- We **never** write directly to Neo4j without going through PostgreSQL
+- If Neo4j is corrupted → full rebuild from PostgreSQL
+- Every Neo4j node holds a `pg_id` → bridge to the source of truth
+
+### ACID / BASE boundary
 
 | | PostgreSQL (ACID) | Neo4j (BASE) |
 |--|-------------------|--------------|
-| **Rôle** | Source de vérité | Moteur d'exploration |
-| **Garantie** | Transactions strictes | Disponibilité + performance |
-| **Données** | Texte, métadonnées, occurrences | Relations, connexions, graphe |
-| **Question type** | *"Que dit le verset 2:255 ?"* | *"Quels versets partagent ces racines ?"* |
+| **Role** | Source of truth | Exploration engine |
+| **Guarantee** | Strict transactions | Availability + performance |
+| **Data** | Text, metadata, occurrences | Relationships, connections, graph |
+| **Typical query** | *"What does verse 2:255 say?"* | *"Which verses share these roots?"* |
 
 ---
 
-## 🗺️ Modèle PostgreSQL
+## PostgreSQL Model
 
 ### Tables
 
@@ -74,29 +84,29 @@ WikiQuran n'est **pas** un Quran viewer. C'est le premier outil qui traite le Co
 surah ──< ayah ──< word_occurrence >── word >── root
 ```
 
-| Table | Rôle | Clés notables |
-|-------|------|--------------|
-| `surah` | Sourates + métadonnées complètes | `revelation_order`, `type` |
-| `ayah` | Versets + texte arabe Uthmani | `surah_id`, `number` |
-| `root` | Racines uniques | `buckwalter` (clé), `arabic` (affichage) |
-| `word` | Mots uniques | `root_id`, `lemma_buckwalter`, `pos` |
-| `word_occurrence` | Chaque apparition d'un mot dans un verset | `word_id`, `ayah_id`, `position` |
+| Table | Role | Key fields |
+|-------|------|-----------|
+| `surah` | Surahs + complete metadata | `revelation_order`, `type` |
+| `ayah` | Verses + Uthmani Arabic text | `surah_id`, `number` |
+| `root` | Unique roots | `buckwalter` (key), `arabic` (display) |
+| `word` | Unique words | `root_id`, `lemma_buckwalter`, `pos` |
+| `word_occurrence` | Each word appearance in a verse | `word_id`, `ayah_id`, `position` |
 
-### Décisions d'architecture PostgreSQL
+### Architectural decisions
 
-- ✅ **Mots uniques** dans `word` + occurrences dans `word_occurrence` (pattern many-to-many)
-- ✅ **Buckwalter** comme clé technique, **Arabe** pour l'affichage (conversion à l'import)
-- ✅ **Métadonnées Surah complètes** dès Phase 1 (juz, hizb, page Mushaf)
-- ⏭️ **Morphologie Phase 6** : table `morpheme` pour préfixes/suffixes
+- ✅ **Unique words** in `word` + occurrences in `word_occurrence` (many-to-many pattern)
+- ✅ **Buckwalter** as technical key, **Arabic** for display (converted at import)
+- ✅ **Complete Surah metadata** from Phase 1 (juz, hizb, Mushaf page)
+- ⏭️ **Morphology in Phase 6**: `morpheme` table for prefixes/suffixes
 
 ---
 
-## 🕸️ Modèle Neo4j
+## Neo4j Model
 
-### Nœuds
+### Nodes
 
-| Nœud | Propriétés clés | Source |
-|------|----------------|--------|
+| Node | Key properties | Source |
+|------|---------------|--------|
 | `Surah` | `pg_id`, `number`, `type`, `revelation_order` | Phase 1 ✅ |
 | `Ayah` | `pg_id`, `surah_number`, `ayah_number` | Phase 1 ✅ |
 | `Word` | `pg_id`, `text_arabic`, `pos` | Phase 1 ✅ |
@@ -104,81 +114,85 @@ surah ──< ayah ──< word_occurrence >── word >── root
 | `Person` | `pg_id`, `name_arabic`, `type` | Phase 6 ⏭️ |
 | `Theme` | `pg_id`, `label_arabic` | Phase 6 ⏭️ |
 
-### Relations
+### Relationships
 
 ```cypher
 (Surah)-[:HAS_AYAH]---------------------------------------->(Ayah)
 (Ayah)-[:CONTAINS {position}]----------------------------->(Word)
 (Word)-[:DERIVED_FROM]------------------------------------>(Root)
-(Ayah)-[:SHARES_ROOT {root_bw, root_ar, count}]---------->(Ayah)   ← clé analytique Phase 1
+(Ayah)-[:SHARES_ROOT {root_bw, root_ar, count}]---------->(Ayah)   ← analytical key — Phase 1
 (Ayah)-[:MENTIONS]----------------------------------------->(Person) ← Phase 6
 (Person)-[:CO_MENTIONED {count}]-------------------------->(Person) ← Phase 6
 (Ayah)-[:HAS_THEME]---------------------------------------->(Theme)  ← Phase 6
 ```
 
-### La relation différenciante : `SHARES_ROOT`
+### The differentiating relationship: `SHARES_ROOT`
 
-Deux versets sont connectés s'ils partagent au moins une racine commune. `count` = nombre de racines partagées (poids de la relation). C'est ce qu'**aucun outil existant** ne propose visuellement.
+Two verses are connected if they share at least one common root. `count` = number of shared roots (relationship weight). This is what **no existing tool** offers visually.
 
 ```cypher
-// Exemple : versets les plus connectés à Ayat al-Kursi
+// Example: verses most connected to Ayat al-Kursi
 MATCH (a1:Ayah {surah_number: 2, ayah_number: 255})
       -[r:SHARES_ROOT]->(a2:Ayah)
-RETURN a2.surah_number, a2.ayah_number, r.count AS racines_communes
-ORDER BY racines_communes DESC
+RETURN a2.surah_number, a2.ayah_number, r.count AS shared_roots
+ORDER BY shared_roots DESC
 LIMIT 20;
 ```
 
 ---
 
-## 🛠️ Stack Technique
+## Tech Stack
 
 ### Frontend
-| Outil | Rôle |
-|-------|------|
-| **React 19 + Vite** | Framework UI |
-| **TailwindCSS v4** | Styling (support RTL arabe) |
-| **react-force-graph** | Visualisation graphe (WebGL) |
-| **TanStack Query v5** | Cache API |
-| **TypeScript** | Typage |
+
+| Tool | Role |
+|------|------|
+| **React 19 + Vite** | UI framework |
+| **TailwindCSS v4** | Styling (native RTL support) |
+| **react-force-graph** | Graph visualization (WebGL) |
+| **TanStack Query v5** | API cache |
+| **TypeScript** | Type safety |
 
 ### Backend
-| Outil | Rôle |
-|-------|------|
-| **FastAPI** (Python 3.12) | API REST — 9 endpoints |
-| **SQLAlchemy 2.0** | ORM PostgreSQL |
-| **Pydantic v2** | Validation des données |
 
-### Bases de données
-| Outil | Rôle |
-|-------|------|
-| **PostgreSQL 17-alpine** | Textes, métadonnées, full-text search |
-| **Neo4j 5.26 LTS Community** | Graphe de relations (6M+ SHARES_ROOT) |
+| Tool | Role |
+|------|------|
+| **FastAPI** (Python 3.12) | REST API — 9 endpoints |
+| **SQLAlchemy 2.0** | PostgreSQL ORM |
+| **Pydantic v2** | Data validation |
+
+### Databases
+
+| Tool | Role |
+|------|------|
+| **PostgreSQL 17-alpine** | Text, metadata, full-text search |
+| **Neo4j 5.26 LTS Community** | Relationship graph (6M+ SHARES_ROOT) |
 
 ### Infrastructure
-| Environnement | Outils |
-|--------------|--------|
+
+| Environment | Tools |
+|-------------|-------|
 | **Dev** | Docker Compose |
 | **Prod** | VPS OVH Debian — Nginx Proxy Manager + Docker Compose |
 
 ---
 
-## 🚀 Roadmap
+## Roadmap
 
-| Phase | Description | Statut |
+| Phase | Description | Status |
 |-------|-------------|--------|
-| Phase 1 | Extraction & Data | ✅ Terminée |
-| Phase 2 | Base de données | ✅ Terminée |
-| Phase 3 | Backend API | ✅ Terminée |
-| Phase 4 | Frontend | ✅ Terminée |
-| Phase 5 | Déploiement VPS | ✅ Terminée |
-| Phase 6 | Enrichissement | ⏳ En cours |
+| Phase 1 | Data extraction | ✅ Done |
+| Phase 2 | Database | ✅ Done |
+| Phase 3 | Backend API | ✅ Done |
+| Phase 4 | Frontend | ✅ Done |
+| Phase 5 | VPS deployment | ✅ Done |
+| Phase 6 | Enrichment | ⏳ In progress |
 
-Détail complet dans [ROADMAP.md](./ROADMAP.md).
+Full details in [ROADMAP.md](./ROADMAP.md).
 
 ---
 
-## 📁 Structure du projet
+## Project Structure
 
 ```
 wikiquran/
@@ -191,7 +205,7 @@ wikiquran/
 │       ├── models/        # SQLAlchemy
 │       ├── schemas/       # Pydantic
 │       ├── api/           # Routes
-│       ├── services/      # Logique métier
+│       ├── services/      # Business logic
 │       └── utils/         # Helpers (buckwalter, etc.)
 │
 ├── frontend/
@@ -205,12 +219,12 @@ wikiquran/
 │
 ├── scripts/
 │   ├── extraction/        # Tanzil + Corpus Quran parsers
-│   ├── database/          # Import PG + sync Neo4j
-│   └── utils/             # Buckwalter → Arabe, helpers
+│   ├── database/          # PG import + Neo4j sync
+│   └── utils/             # Buckwalter → Arabic, helpers
 │
 ├── data/
-│   ├── quran_raw/         # Fichiers sources bruts
-│   └── quran_enriched/    # JSON intermédiaire normalisé
+│   ├── quran_raw/         # Raw source files
+│   └── quran_enriched/    # Normalized intermediate JSON
 │
 ├── schema_postgresql.sql
 ├── docker-compose.yml
@@ -221,17 +235,17 @@ wikiquran/
 
 ---
 
-## ⚖️ Considérations éthiques
+## Ethical Considerations
 
-- ✅ Données publiques et libres de droits (CC-BY 3.0 / GNU GPL)
-- ✅ Usage éducatif, recherche et journalisme
-- ✅ Aucune interprétation religieuse ajoutée — données brutes uniquement
-- ✅ Pas de collecte de données utilisateurs
+- ✅ Public, open-licensed data (CC-BY 3.0 / GNU GPL)
+- ✅ Educational, research and journalistic use
+- ✅ No religious interpretation added — raw data only
+- ✅ No user data collection
 
 ---
 
-**Dernière mise à jour :** 28 février 2026
-**Statut :** ⏳ Phase 6 en cours
-**Version :** 0.4.0
-**URL prod :** https://quranicdata.org
-**Auteur :** [Sidr Valley AI](https://mondher.ch)
+**Last updated:** February 28, 2026
+**Status:** ⏳ Phase 6 in progress
+**Version:** 0.4.0
+**URL:** https://quranicdata.org
+**Author:** [Sidr Valley AI](https://mondher.ch)
