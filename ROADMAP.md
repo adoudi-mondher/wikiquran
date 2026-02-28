@@ -1,6 +1,6 @@
 # 🕌 WikiQuran — Roadmap détaillée
 
-> Suivi des tâches par phase — mis à jour le 27 février 2026
+> Suivi des tâches par phase — mis à jour le 28 février 2026
 
 ---
 
@@ -173,22 +173,34 @@
 - Swap indispensable pour calcul SHARES_ROOT (OOM Killer sans swap)
 - `nohup docker exec` pour import long sans risque de déconnexion SSH
 - `APP_ENV` injecté via `env_file` dans docker-compose (pas `docker cp`)
+- Build frontend prod : `cd frontend && npm run build` puis `docker compose restart frontend`
 
 ### Restant (reporté) ⏭️
-- [ ] Alembic — migrations PostgreSQL (avant Phase 6)
-- [ ] `deploy.sh` — script de déploiement simplifié
-- [ ] CI/CD GitHub Actions (Phase 6+)
+- [ ] `deploy.sh` — script de déploiement simplifié (git pull + npm build + restart)
+- [ ] CI/CD GitHub Actions — apprentissage (SSH → git pull → build → restart)
 - [ ] Audit sécurité (session dédiée)
 - [ ] Monitoring basique (logs + healthchecks)
 
 ---
 
-## ⏳ Phase 6 — Enrichissement `PROCHAINE ÉTAPE`
+## ⏳ Phase 6 — Enrichissement `EN COURS`
 
-### Frontend (améliorations) ⏭️
-- [ ] Polish UX (responsive mobile, animations, feedback utilisateur)
+### Frontend — Session 28 février 2026 ✅
+- [x] `AppFooter` — crédits tanzil.net + corpus.quran.com + © 2026 · Sidr Valley AI → mondher.ch
+- [x] `AppLayout` — intégration footer + fix flex-1 min-h-0 (footer toujours visible)
+- [x] Titre UI : `قرآن · شبكة المعرفة` (remplace ويكي قرآن — شبكة المعرفة)
+- [x] Titre cliquable → `/graph`
+- [x] `index.html` — SEO complet : meta description, keywords, Open Graph, Twitter Card, Schema.org
+- [x] `og-image.png` — image de partage réseaux sociaux (`frontend/public/`)
+- [x] `favicon.svg` — lettre ن, fond bleu #2563eb, 64×64 (`frontend/public/`)
+
+### Frontend — À faire ⏭️
+- [ ] Recadrer `og-image.png` — serrer sur le graphe, ajouter titre + URL en overlay (Figma/Canva)
+- [ ] Favicon définitive — identité visuelle Sidr Valley AI (Phase 7+)
+- [ ] Compte X/Twitter Sidr Valley AI → activer `twitter:creator` dans index.html
 - [ ] Surbrillance racine dans le texte du verset (endpoint `/ayah/{s}/{v}/words`)
 - [ ] Recherche full-text arabe (page ou composant)
+- [ ] Polish UX (responsive mobile, animations, feedback utilisateur)
 
 ### Données & Backend ⏭️
 - [ ] Personnages & Prophètes (`Person`, `CO_MENTIONED`)
@@ -205,7 +217,7 @@
 
 ### Infrastructure ⏭️
 - [ ] `deploy.sh` — script de déploiement simplifié
-- [ ] CI/CD GitHub Actions
+- [ ] CI/CD GitHub Actions (apprentissage — SSH → git pull → build → restart)
 - [ ] Audit sécurité complet
 - [ ] Monitoring basique (logs + healthchecks)
 - [ ] API publique documentée et versionnée
@@ -229,12 +241,16 @@
 | Réseau Docker NPM | `n8n_proxy-network` (existant, partagé) |
 | Réseau Docker WikiQuran | `wikiquran-internal` (isolé, BDD jamais exposées) |
 | Frontend prod | nginx:alpine servant build Vite statique |
+| Build frontend VPS | `cd frontend && npm run build` (hors Docker) |
 | Versioning deps | `venv` + `pip` + `requirements.txt` |
 | Interpréteur VSCode | `.venv\Scripts\python.exe` (Pylance) |
 | Docker backend local | Non — Dockerfile créé au déploiement |
 | Tri mode racine | `sort=connected` par défaut |
 | Node.js VPS | v22 LTS (build frontend uniquement) |
 | Swap VPS | 4Go (nécessaire import Neo4j) |
+| Titre UI | `قرآن · شبكة المعرفة` |
+| Favicon | `frontend/public/favicon.svg` — lettre ن, #2563eb |
+| Image OG | `frontend/public/og-image.png` → `https://quranicdata.org/og-image.png` |
 
 ---
 
@@ -254,7 +270,7 @@
 
 ---
 
-**Dernière mise à jour :** 27 février 2026
-**Statut :** ✅ Phases 1, 2, 3, 4, 5 terminées — ⏳ Phase 6 Enrichissement prochaine étape
+**Dernière mise à jour :** 28 février 2026
+**Statut :** ⏳ Phase 6 en cours — frontend polish session 1 terminée
 **Version :** 0.4.0
 **URL prod :** https://quranicdata.org
