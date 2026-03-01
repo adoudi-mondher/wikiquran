@@ -38,3 +38,6 @@ node_modules/
 dist/
 .vite/
 *.local
+
+# Docs
+*.txt

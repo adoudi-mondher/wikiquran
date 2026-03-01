@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="WikiQuran API",
+    title="Quranic data API",
     description="Knowledge Graph du Coran — API REST",
     version=settings.APP_VERSION,
     lifespan=lifespan,
@@ -58,4 +58,13 @@ def health():
         "status": "ok",
         "version": settings.APP_VERSION,
         "env": settings.APP_ENV,
+    }
+
+@app.get("/", tags=["Health"])
+def root():
+    return {
+        "status": "ok",
+        "version": settings.APP_VERSION,
+        "env": settings.APP_ENV,
+        "docs": "https://api.quranicdata.org/docs",  # ← guide vers /docs
     }
