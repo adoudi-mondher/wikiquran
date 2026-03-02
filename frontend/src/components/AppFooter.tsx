@@ -41,6 +41,15 @@ export function AppFooter() {
           >
             Sidr Valley AI
           </a>
+           <span className="text-gray-300 dark:text-white/20">·</span>
+           <a
+            href="https://github.com/adoudi-mondher/quranic-data"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gray-700 dark:hover:text-white/70 transition-colors duration-200 underline-offset-2 hover:underline"
+          >
+            GitHub
+          </a>
         </div>
 
       </div>
